@@ -116,13 +116,6 @@ export class TwitchIrcClient {
   }
 
   /**
-   * Requests capabilities.
-   */
-  cap(...capabilities: Capability[]) {
-    this.send(`CAP REQ :${capabilities.join(" ")}\r\n`);
-  }
-
-  /**
    * Joins `channel`.
    *
    * `channel` must begin with `#`.
@@ -196,7 +189,7 @@ export class TwitchIrcClient {
     }
 
     if (this._capabilities.length > 0) {
-      this.cap(...this._capabilities);
+      this.send(`CAP REQ :${this._capabilities.join(" ")}\r\n`);
     }
 
     for (const channel of this._channels) {
