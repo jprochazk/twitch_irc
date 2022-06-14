@@ -21,5 +21,5 @@ client.on("open", () => {
   }
 });
 
-// @ts-ignore
+// @ts-expect-error: debugging
 window.client = client;
