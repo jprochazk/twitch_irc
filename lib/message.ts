@@ -1,18 +1,58 @@
-// TODO: document this
-
-type Channel = `#${string}`;
-
 export class Message {
   private constructor(
+    /**
+     * The value that was passed into `Message.parse`.
+     */
     public raw: string,
+    /**
+     * Message command. This represents the type of the message, or what its intent is.
+     */
     public command: IrcCommand,
+    /**
+     * Message params. Used for storing command parameters, such as the channel or message.
+     *
+     * For example, to obtain the message text of a `privmsg`:
+     * ```ts
+     * message.params.at(-1)
+     * ```
+     */
     public params: string[],
+    /**
+     * Message tags. These contain the message's metadata.
+     *
+     * You can find documentation for all Twitch IRC tags over at https://dev.twitch.tv/docs/irc/tags.
+     */
     public tags?: Tags,
+    /**
+     * Message prefix, for `privmsg`, this contains the user's login.
+     * Alternatively, you can get both their display name and login from tags.
+     */
     public prefix?: Prefix,
+    /** Name of the channel where this message originated */
     public channel?: Channel
   ) {}
 
+  /**
+   * Get a tag preprocessed according to `type`
+   *
+   * - `csv` - parses the value as a comma separated list of strings, use for tags such as `badges` or `emotes`
+   * - `number` - parses the value as a number, use for tags such as `tmi-sent-ts`
+   * - `string` - this is the default, it unescapes[^1] the value, use for tags such as `system-msg`
+   *
+   * [^1]: Unescaping is the process of converting escaped characters,
+   * such as `\s` and `\n`, into the characters they represent.
+   */
   tag<T extends TagTypes = "string">(key: keyof KnownTags, type?: T): TagType<T> | null;
+  /**
+   * Get a tag preprocessed according to `type`
+   *
+   * - `csv` - parses the value as a comma separated list of strings, use for tags such as `badges` or `emotes`
+   * - `number` - parses the value as a number, use for tags such as `tmi-sent-ts`
+   * - `string` - this is the default, it unescapes[^1] the value, use for tags such as `system-msg`
+   *
+   * [^1]: Unescaping is the process of converting escaped characters, such as `\s` and `\n`,
+   * into the characters they represent.
+   */
   tag<T extends TagTypes = "string">(key: string, type?: T): TagType<T> | null;
   tag<T extends TagTypes = "string">(key: keyof KnownTags | string, type?: T): TagType<T> | null {
     const v = this.tags?.[key];
@@ -24,6 +64,11 @@ export class Message {
     return unescape(v) as TagType<T>;
   }
 
+  /**
+   * Parse a Twitch IRC message.
+   *
+   * See `message.test.ts` for some examples.
+   */
   static parse(message: string): Message | null {
     let tags: Tags | undefined;
     let prefix: Prefix | undefined;
@@ -45,6 +90,7 @@ export class Message {
         const tagPair = tagPairs[i];
         const [key, value] = splitOnce(tagPair, "=");
         if (!value) continue;
+        // @ts-expect-error: initializing tags requires mutating them
         tags[kebabToCamelCase(key)] = value;
       }
     }
@@ -71,8 +117,7 @@ export class Message {
 
     /* command: */ {
       const [rawCommand, maybeRemainder] = splitOnce(remainder, " ");
-      if (!maybeRemainder) return null;
-      remainder = maybeRemainder;
+      remainder = maybeRemainder ?? "";
 
       if (ircCommandSet.has(rawCommand)) {
         command = { kind: rawCommand as IrcCommandKind };
@@ -112,8 +157,7 @@ export class Message {
   }
 }
 
-// @ts-expect-error: temporary
-window.Message = Message;
+type Channel = `#${string}`;
 
 type TagTypes = "string" | "number" | "csv";
 type TagType<T extends TagTypes> = T extends "string"
@@ -124,7 +168,13 @@ type TagType<T extends TagTypes> = T extends "string"
   ? string[]
   : never;
 
-function unescape(str: string): string {
+/**
+ * Unescape an escaped tag value.
+ *
+ * Unescaping is the process of converting escaped characters, such as `\s` and `\n`,
+ * into the characters they represent.
+ */
+export function unescape(str: string): string {
   let out = "";
   let escape = false;
   loop: for (const c of str) {
@@ -167,6 +217,11 @@ function splitOnce(str: string, delimiter: string): [string, string | null] {
   else return [str.slice(0, index), str.slice(index + 1)];
 }
 
+/**
+ * Converts a string from `kebab-case` into `lowerCamelCase`.
+ *
+ * E.g. `reply-parent-display-name` is converted to `replyParentDisplayName`.
+ */
 function kebabToCamelCase(str: string): string {
   const parts = str.split("-");
   if (parts.length > 1) {
@@ -241,10 +296,10 @@ type KebabToCamelCase<K extends string> = K extends `${infer Left}-${infer Right
   ? `${Lowercase<Left>}${Capitalize<KebabToCamelCase<Right>>}`
   : `${Lowercase<K>}`;
 type KnownTags = {
-  [K in typeof knownIrcTags[number] as KebabToCamelCase<K>]?: string;
+  readonly [K in typeof knownIrcTags[number] as KebabToCamelCase<K>]?: string;
 };
 type Tags = KnownTags & {
-  [tag: string]: string;
+  readonly [tag: string]: string;
 };
 
 export type IrcCommand = { kind: IrcCommandKind } | { kind: "UNKNOWN"; raw: string };
@@ -268,10 +323,13 @@ const ircCommands = [
   "CAP",
 ] as const;
 const ircCommandSet = new Set<string>(ircCommands);
-type IrcCommandKind = typeof ircCommands[number];
+export type IrcCommandKind = typeof ircCommands[number];
 
-type Prefix = {
+export type Prefix = {
   nick?: string;
   user?: string;
   host: string;
 };
+
+// @ts-ignore: temporary
+window.Message = Message;
