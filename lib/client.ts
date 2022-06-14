@@ -145,9 +145,17 @@ export class TwitchIrcClient {
    * Send a privmsg containing `message` to `channel`.
    *
    * `channel` must begin with `#`.
+   *
+   * Optionally, you can specify `replyParentMsgId` to make the message a reply to another message.
    */
-  privmsg(channel: Channel, message: string) {
-    this.send(`PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n`);
+  privmsg(channel: Channel, message: string, replyParentMsgId?: string) {
+    if (!replyParentMsgId) {
+      this.send(`PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n`);
+    } else {
+      this.send(
+        `@reply-parent-msg-id=${replyParentMsgId} PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n`
+      );
+    }
   }
 
   /**
@@ -175,14 +183,15 @@ export class TwitchIrcClient {
     ws.onerror = this._onerror;
     ws.onclose = this._onclose;
     ws.onopen = this._onopen;
-    ws.onmessage = this._onmessage;
+    ws.onmessage = this._onauthmessage;
     return ws;
   }
 
   private _onopen = () => {
+    this._state = "authenticating";
     if (this._credentials) {
-      this.send(`PASS ${this._credentials.pass}\r\n`);
-      this.send(`NICK ${this._credentials.nick}\r\n`);
+      this.send(`PASS ${this._credentials.token}\r\n`);
+      this.send(`NICK ${this._credentials.login}\r\n`);
     } else {
       this.send(`PASS amogus\r\n`);
       this.send(`NICK justinfan37982\r\n`);
@@ -195,20 +204,35 @@ export class TwitchIrcClient {
     for (const channel of this._channels) {
       this.send(`JOIN ${channel}\r\n`);
     }
-
-    this._latencyTest.start();
-    this._emit("open");
-    this._state = "open";
-    this._reconnectDelay = 1000;
   };
 
-  private _onmessage = (event: MessageEvent<string>) => {
+  private _onauthmessage = (event: MessageEvent<string>) => {
     for (const raw of event.data.split("\r\n").filter(Boolean)) {
       const message = Message.parse(raw);
-      if (!message) {
-        this._logger.warn("Failed to parse message:\n", raw);
-        continue;
+      if (this.state === "authenticating") {
+        if (
+          message.command.kind === "NOTICE" &&
+          message.params.at(-1)?.includes("authentication failed")
+        ) {
+          // failure
+          this._onerror(new Error("Invalid credentials"));
+          this.close();
+        } else if (message.command.kind === "UNKNOWN" && message.command.raw === "001") {
+          // success
+          this._onconnectedmessage(event);
+          this._ws.onmessage = this._onconnectedmessage;
+
+          this._state = "open";
+          this._latencyTest.start();
+          this._emit("open");
+          this._reconnectDelay = 1000;
+        }
       }
+    }
+  };
+  private _onconnectedmessage = (event: MessageEvent<string>) => {
+    for (const raw of event.data.split("\r\n").filter(Boolean)) {
+      const message = Message.parse(raw);
       if (message.command.kind === "PING" && message.params[0] === "tmi.twitch.tv") {
         this.send("PONG :tmi.twitch.tv\r\n");
         continue;
@@ -240,7 +264,7 @@ export class TwitchIrcClient {
   };
 
   private _onerror = (error: unknown) => {
-    this._logger.error("Error:", error);
+    this._logger.error(error);
     this._emit("error", error);
   };
 }
@@ -267,15 +291,16 @@ type ClientEventCallbackMap = {
   [K in keyof ClientEventData]: Set<ClientEventCallback<K>>;
 };
 
-export type State = "connecting" | "open" | "reconnecting" | "closed";
+export type State = "connecting" | "authenticating" | "open" | "reconnecting" | "closed";
 
 export type RawMessage = `${string}\r\n`;
 
 export type Capability = "twitch.tv/commands" | "twitch.tv/tags" | "twitch.tv/membership";
 
+export type Token = `oauth:${string}`;
 export type Credentials = {
-  nick: string;
-  pass: string;
+  login: string;
+  token: Token;
 };
 
 export type Channel = `#${string}`;

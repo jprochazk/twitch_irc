@@ -69,7 +69,7 @@ export class Message {
    *
    * See `message.test.ts` for some examples.
    */
-  static parse(message: string): Message | null {
+  static parse(message: string) {
     let tags: Tags | undefined;
     let prefix: Prefix | undefined;
     let command: IrcCommand;
