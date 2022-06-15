@@ -51,16 +51,17 @@ $ deno run \
 
 #### Simple bot
 
-Requires two environment variables:
+Requires three environment variables:
 
-- `TOKEN` in the format `oauth:<token>`, e.g. `oauth:abcdefg0123456789`. [You can generate one here](https://twitchapps.com/tmi/)
-- `LOGIN` which is the username of the account you used to generate `TOKEN`.
+- `CHANNEL` in the format `#<name>`, e.g. `#jtv`.
+- `TOKEN` in the format `oauth:<token>`, e.g. `oauth:abcdefg0123456789`. [You can generate one here](https://twitchapps.com/tmi/).
+- `LOGIN`, which is the username of the account you used to generate `TOKEN`.
 
-The bot will join `CHANNEL` upon connecting, and you can type `!ping` in command to have it respond to you.
+The bot will join `CHANNEL` upon connecting, and you can type `!ping` in command to have it respond to you. It will also join its own channel.
 
 ```
 $ deno run \
   --allow-env=CHANNEL,LOGIN,TOKEN \
   --allow-net=irc-ws.chat.twitch.tv \
-  https://deno.land/x/twitch_irc/examples/logs.ts
+  https://deno.land/x/twitch_irc/examples/bot.ts
 ```
