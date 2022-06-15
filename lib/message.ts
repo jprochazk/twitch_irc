@@ -1,3 +1,5 @@
+import { type Channel } from "./client.ts";
+
 export class Message {
   private constructor(
     /**
@@ -156,8 +158,6 @@ export class Message {
     return new Message(message, command, params, tags, prefix, channel);
   }
 }
-
-type Channel = `#${string}`;
 
 type TagTypes = "string" | "number" | "csv";
 type TagType<T extends TagTypes> = T extends "string"
@@ -330,6 +330,3 @@ export type Prefix = {
   user?: string;
   host: string;
 };
-
-// @ts-ignore: temporary
-window.Message = Message;

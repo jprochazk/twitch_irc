@@ -1,9 +1,13 @@
 import { Message } from "./message.ts";
+import { sleep } from "./util.ts";
+import { SameMessageBypass } from "./smb.ts";
+import { LatencyTest } from "./latency.ts";
+import { type Logger, LOGGER, SILENT_LOGGER } from "./log.ts";
 
 export class TwitchIrcClient {
   private _ws: WebSocket;
   private _reconnectDelay = 1000;
-  private _channels = new Set<Channel>();
+  private _channels: Set<Channel>;
   private _sameMessageBypass = new SameMessageBypass();
   private _listeners: ClientEventCallbackMap = {
     message: new Set(),
@@ -25,7 +29,11 @@ export class TwitchIrcClient {
   constructor(
     options: {
       capabilities?: Capability[];
-      /** Credentials used to authenticate. */
+      /**
+       * Credentials used to authenticate.
+       *
+       * If configured, the bot will also join its own channel by joining `#${credentials.login}`.
+       */
       credentials?: Credentials;
       /** Whether or not the client should automatically reconnect. */
       reconnect?: boolean;
@@ -40,6 +48,9 @@ export class TwitchIrcClient {
     this._reconnect = options.reconnect ?? true;
     this._url = options.url ?? "wss://irc-ws.chat.twitch.tv";
     this._logger = options.verbose ? LOGGER : SILENT_LOGGER;
+    this._channels = new Set(
+      this._credentials?.login ? [`#${this._credentials.login}` as const] : []
+    );
 
     this._ws = this._create_socket();
   }
@@ -150,15 +161,27 @@ export class TwitchIrcClient {
    *
    * `channel` must begin with `#`.
    *
-   * Optionally, you can specify `replyParentMsgId` to make the message a reply to another message.
+   * Optionally, you can specify `tags`:
+   * - `reply-parent-msg-id`, which will make the message a reply to the parent message.
+   * - `client-nonce`, which will be present in the `USERSTATE` response, allowing userstates
+   *   to be associated with the message that triggered it.
+   *
+   * This won't work if you have not configured `credentials` when creating the client.
    */
-  privmsg(channel: Channel, message: string, replyParentMsgId?: string) {
-    if (!replyParentMsgId) {
-      this.send(`PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n`);
+  privmsg(
+    channel: Channel,
+    message: string,
+    options: { replyParentMsgId?: string; clientNonce?: string } = {}
+  ) {
+    const tags = [];
+    if (options.replyParentMsgId) tags.push(`reply-parent-msg-id=${options.replyParentMsgId}`);
+    if (options.clientNonce) tags.push(`client-nonce=${options.clientNonce}`);
+
+    const body = `PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n` as const;
+    if (tags.length === 0) {
+      this.send(body);
     } else {
-      this.send(
-        `@reply-parent-msg-id=${replyParentMsgId} PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n`
-      );
+      this.send(`@${tags.join(";")} ${body}`);
     }
   }
 
@@ -308,90 +331,3 @@ export type Credentials = {
 };
 
 export type Channel = `#${string}`;
-
-class LatencyTest {
-  private _value = 100 /* ms */;
-  private _start = Date.now() /* ms */;
-  private _arg = nonce();
-  private _pingInterval = -1;
-
-  constructor(private client: TwitchIrcClient) {
-    this.client.on("message", this._onmessage);
-  }
-
-  get value() {
-    return this._value;
-  }
-
-  start() {
-    this._pingInterval = setInterval(this._interval, 5000);
-  }
-
-  stop() {
-    clearInterval(this._pingInterval);
-    this._pingInterval = -1;
-  }
-
-  private _onmessage = ({ command, params }: Message) => {
-    if (command.kind === "PONG" && params[1] === this._arg) {
-      this._value = Date.now() - this._start;
-      return true;
-    }
-  };
-
-  private _interval = () => {
-    this._start = Date.now();
-    this.client.ping(this._arg);
-  };
-}
-
-class SameMessageBypass {
-  private static CHARS = [
-    "",
-    // NOTE: second space is `U+2800`
-    " ⠀",
-  ];
-  private flag = 0;
-
-  get() {
-    const current = this.flag;
-    this.flag = +!this.flag;
-    return SameMessageBypass.CHARS[current];
-  }
-}
-
-interface Logger {
-  // deno-lint-ignore no-explicit-any
-  info(...args: any[]): void;
-  // deno-lint-ignore no-explicit-any
-  error(...args: any[]): void;
-  // deno-lint-ignore no-explicit-any
-  warn(...args: any[]): void;
-}
-
-function noop() {}
-
-const SILENT_LOGGER: Logger = {
-  info: noop,
-  error: noop,
-  warn: noop,
-};
-
-const LOGGER: Logger = {
-  info(...args) {
-    console.info("[twitch_irc]", ...args);
-  },
-  error(...args) {
-    console.error("[twitch_irc]", ...args);
-  },
-  warn(...args) {
-    console.warn("[twitch_irc]", ...args);
-  },
-};
-
-const sleep = (delay: number) => new Promise((done) => setTimeout(done, delay));
-
-const nonce = (length = 32) =>
-  [...crypto.getRandomValues(new Uint8Array(length / 2))]
-    .map((v) => v.toString(16).padStart(2, "0"))
-    .join("");
