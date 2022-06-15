@@ -8,8 +8,8 @@ const CHANNEL = env("CHANNEL") as Channel;
 const client = new TwitchIrcClient({
   capabilities: ["twitch.tv/tags", "twitch.tv/commands"],
   credentials: {
-    login: LOGIN,
-    token: TOKEN as Token,
+    nick: LOGIN,
+    pass: TOKEN as Token,
   },
   verbose: true,
 });

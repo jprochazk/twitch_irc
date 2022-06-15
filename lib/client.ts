@@ -49,7 +49,7 @@ export class TwitchIrcClient {
     this._url = options.url ?? "wss://irc-ws.chat.twitch.tv";
     this._logger = options.verbose ? LOGGER : SILENT_LOGGER;
     this._channels = new Set(
-      this._credentials?.login ? [`#${this._credentials.login}` as const] : []
+      this._credentials?.nick ? [`#${this._credentials.nick}` as const] : []
     );
 
     this._ws = this._create_socket();
@@ -224,8 +224,8 @@ export class TwitchIrcClient {
   private _onopen = () => {
     this._state = "authenticating";
     if (this._credentials) {
-      this.send(`PASS ${this._credentials.token}\r\n`);
-      this.send(`NICK ${this._credentials.login}\r\n`);
+      this.send(`PASS ${this._credentials.pass}\r\n`);
+      this.send(`NICK ${this._credentials.nick}\r\n`);
     } else {
       this.send(`PASS amogus\r\n`);
       this.send(`NICK justinfan37982\r\n`);
@@ -332,8 +332,8 @@ export type Capability = "twitch.tv/commands" | "twitch.tv/tags" | "twitch.tv/me
 
 export type Token = `oauth:${string}`;
 export type Credentials = {
-  login: string;
-  token: Token;
+  nick: string;
+  pass: Token;
 };
 
 export type Channel = `#${string}`;
