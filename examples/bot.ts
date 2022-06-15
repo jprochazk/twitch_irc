@@ -23,7 +23,7 @@ client.on("message", (m) => {
       client.privmsg(
         CHANNEL,
         `Pong! Hi, ${m.tags?.displayName}. I'm currently running on Deno ${Deno.version.deno}. My latency to TMI is ${client.latency} ms. Your chat color is ${m.tags?.color}.`,
-        m.tags?.id
+        { replyParentMsgId: m.tags?.id }
       );
     }
   }
