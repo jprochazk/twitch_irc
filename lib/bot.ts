@@ -12,6 +12,7 @@ import { LatencyTest } from "./latency.ts";
 // - roomstate
 // - usernotice -> sub, raid (https://git.kotmisia.pl/Mm2PL/docs/src/branch/master/irc_msg_ids.md#usernotice-msg-ids)
 // TODO: maintain userstate and roomstate so that rate limiters can work properly
+// TODO: consider adding "raw" event which just relays the basic message
 
 /**
  * High-level interface for building bots.
