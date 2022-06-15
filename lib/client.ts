@@ -54,6 +54,10 @@ export class TwitchIrcClient {
     return this._latencyTest.value;
   }
 
+  get channels(): ReadonlySet<Channel> {
+    return this._channels;
+  }
+
   /**
    * Connects an event callback.
    *
