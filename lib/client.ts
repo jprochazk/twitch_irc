@@ -120,6 +120,7 @@ export class TwitchIrcClient {
    * Sends a `PING` with an optional `arg`, which will be sent back by Twitch with the resulting `PONG`.
    */
   ping(arg?: string) {
+    this._logger.info("[PING]", arg ?? "-");
     this.send(arg ? `PING :${arg}\r\n` : "PING\r\n");
   }
 
@@ -127,6 +128,7 @@ export class TwitchIrcClient {
    * Sends a `PONG` with an optional `arg`.
    */
   pong(arg?: string) {
+    this._logger.info("[PONG]", arg ?? "-");
     this.send(arg ? `PONG :${arg}\r\n` : "PONG\r\n");
   }
 
@@ -139,6 +141,7 @@ export class TwitchIrcClient {
    */
   join(channel: Channel) {
     if (!this._channels.has(channel)) {
+      this._logger.info("[JOIN]", channel);
       this.send(`JOIN ${channel}\r\n`);
       this._channels.add(channel);
     }
@@ -151,6 +154,7 @@ export class TwitchIrcClient {
    */
   part(channel: Channel) {
     if (this._channels.has(channel)) {
+      this._logger.info("[PART]", channel);
       this.send(`PART ${channel}\r\n`);
       this._channels.delete(channel);
     }
@@ -178,11 +182,14 @@ export class TwitchIrcClient {
     if (options.clientNonce) tags.push(`client-nonce=${options.clientNonce}`);
 
     const body = `PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n` as const;
+    let data: RawMessage;
     if (tags.length === 0) {
-      this.send(body);
+      data = body;
     } else {
-      this.send(`@${tags.join(";")} ${body}`);
+      data = `@${tags.join(";")} ${body}`;
     }
+    this._logger.info("[PRIVMSG]", data);
+    this.send(data);
   }
 
   /**
@@ -223,11 +230,9 @@ export class TwitchIrcClient {
       this.send(`PASS amogus\r\n`);
       this.send(`NICK justinfan37982\r\n`);
     }
-
     if (this._capabilities.length > 0) {
       this.send(`CAP REQ :${this._capabilities.join(" ")}\r\n`);
     }
-
     for (const channel of this._channels) {
       this.send(`JOIN ${channel}\r\n`);
     }
@@ -248,11 +253,11 @@ export class TwitchIrcClient {
           // success
           this._onconnectedmessage(event);
           this._ws.onmessage = this._onconnectedmessage;
-
           this._state = "open";
+          this._reconnectDelay = 1000;
           this._latencyTest.start();
           this._emit("open");
-          this._reconnectDelay = 1000;
+          break;
         }
       }
     }
@@ -260,6 +265,7 @@ export class TwitchIrcClient {
   private _onconnectedmessage = (event: MessageEvent<string>) => {
     for (const raw of event.data.split("\r\n").filter(Boolean)) {
       const message = Message.parse(raw);
+      this._logger.info("[DEBUG]", message);
       if (message.command.kind === "PING" && message.params[0] === "tmi.twitch.tv") {
         this.send("PONG :tmi.twitch.tv\r\n");
         continue;

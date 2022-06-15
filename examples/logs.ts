@@ -1,6 +1,9 @@
-import { TwitchIrcClient, Channel } from "./mod.ts";
+import { TwitchIrcClient, Channel } from "../mod.ts";
+import { env } from "./util.ts";
 
-const client = new TwitchIrcClient({ verbose: true });
+const CHANNEL = env("CHANNEL") as Channel;
+
+const client = new TwitchIrcClient({ verbose: false });
 
 client.on("message", (m) => {
   console.log(
@@ -15,10 +18,7 @@ client.on("message", (m) => {
 });
 
 client.on("open", () => {
-  const channel = Deno.env.get("CHANNEL");
-  if (channel && channel.startsWith("#")) {
-    client.join(channel as Channel);
-  }
+  client.join(CHANNEL);
 });
 
 // @ts-expect-error: debugging
