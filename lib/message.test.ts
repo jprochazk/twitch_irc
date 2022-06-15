@@ -603,6 +603,23 @@ const cases = [
       /*channel:*/ "#channel"
     ),
   ],
+  [
+    "tag value with space",
+    "@a= b;c=d ;f=g :test!test@test.tmi.twitch.tv PRIVMSG #test :test",
+    // @ts-ignore: using private constructor in test,
+    new Message(
+      /*raw:*/ "@a= b;c=d ;f=g :test!test@test.tmi.twitch.tv PRIVMSG #test :test",
+      /*command:*/ { kind: "PRIVMSG" },
+      /*params:*/ ["test"],
+      /*tags:*/ {
+        a: " b",
+        c: "d ",
+        f: "g",
+      },
+      /*prefix:*/ { nick: "test", user: "test", host: "test.tmi.twitch.tv" },
+      /*channel:*/ "#test"
+    ),
+  ],
 ];
 
 for (const [name, input, expected] of cases) {
