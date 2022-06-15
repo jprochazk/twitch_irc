@@ -24,15 +24,16 @@ export enum ChannelRole {
 
 export interface RateLimiter {
   /**
-   * Returns a promise that resolves when a message can be sent.
+   * Returns `0` if a message can be sent, otherwise returns the number of
+   * remaining milliseconds until a message can be sent.
    */
-  privmsg(now: number, channel: Channel): Promise<void>;
+  privmsg(now: number, channel: Channel): number;
 
   /**
-   * Returns a promise that resolves when a channel can be joined.
-   * @param now
+   * Returns `0` if a channel can be joined, otherwise returns the number of
+   * remaining milliseconds until a channel can be joined.
    */
-  join(now: number): Promise<void>;
+  join(now: number): number;
 }
 
 /**
@@ -55,37 +56,24 @@ export class DefaultLimiter implements RateLimiter {
     now: number,
     channel: Channel,
     options: { role?: ChannelRole; slowModeSeconds?: number } = {}
-  ): Promise<void> {
-    let delay = 0;
-    delay: {
-      const privmsg = this._privmsg.get(now, channel, options);
-      if (privmsg > 0) {
-        delay = privmsg;
-        break delay;
-      }
-
-      const slowmode = this._slowmode.get(now, channel, options);
-      if (slowmode > 0) {
-        delay = slowmode;
-        break delay;
-      }
+  ): number {
+    // check per-channel + global limit first
+    const privmsg = this._privmsg.get(now, channel, options);
+    if (privmsg > 0) {
+      return privmsg;
     }
 
-    if (delay > 0) {
-      return this._sleep(delay);
-    } else {
-      return Promise.resolve();
+    // then check slowmode
+    const slowmode = this._slowmode.get(now, channel, options);
+    if (slowmode > 0) {
+      return slowmode;
     }
+
+    return 0;
   }
 
-  join(now: number): Promise<void> {
-    const remainingMs = this._join.get(now);
-
-    if (remainingMs > 0) {
-      return new Promise((done) => setTimeout(done, remainingMs));
-    } else {
-      return Promise.resolve();
-    }
+  join(now: number): number {
+    return this._join.get(now);
   }
 }
 

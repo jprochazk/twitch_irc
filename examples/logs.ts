@@ -1,20 +1,12 @@
-import { TwitchIrcClient, Channel } from "../mod.ts";
+import { Bot, Channel } from "../mod.ts";
 import { env } from "./util.ts";
 
 const CHANNEL = env("CHANNEL") as Channel;
 
-const client = new TwitchIrcClient({ verbose: false });
+const client = new Bot();
 
-client.on("message", (m) => {
-  console.log(
-    ...[
-      m.command.kind === "UNKNOWN" ? `(${m.command.raw})` : m.command.kind,
-      m.channel && m.channel,
-      m.prefix?.nick,
-      "->",
-      m.params.join(" "),
-    ].filter(Boolean)
-  );
+client.on("privmsg", (m) => {
+  console.log(m.raw.raw);
 });
 
 client.on("open", () => {

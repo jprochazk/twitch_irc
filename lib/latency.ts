@@ -34,6 +34,6 @@ export class LatencyTest {
 
   private _interval = () => {
     this._start = Date.now();
-    this.client.ping(this._arg);
+    this.client.send(`PING :${this._arg}\r\n`);
   };
 }
