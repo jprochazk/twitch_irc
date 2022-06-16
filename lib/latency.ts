@@ -1,5 +1,5 @@
 import { nonce } from "./util.ts";
-import { type TwitchIrcClient } from "./client.ts";
+import { type BaseClient } from "./base.ts";
 import { type Message } from "./message.ts";
 
 export class LatencyTest {
@@ -8,7 +8,7 @@ export class LatencyTest {
   private _arg = nonce();
   private _pingInterval = -1;
 
-  constructor(private client: TwitchIrcClient) {
+  constructor(private client: BaseClient) {
     this.client.on("message", this._onmessage);
   }
 

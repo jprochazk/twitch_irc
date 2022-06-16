@@ -1,4 +1,4 @@
-import { type Channel } from "./client.ts";
+import { type Channel } from "./base.ts";
 import { sleep } from "./util.ts";
 
 const MILLISECOND = 1;

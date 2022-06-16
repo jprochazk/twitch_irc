@@ -3,13 +3,13 @@
 Twitch chat client for [Deno](https://deno.land/)
 
 ```ts
-import { Bot } from "https://deno.land/x/twitch_irc/mod.ts";
+import * as TwitchIrc from "https://deno.land/x/twitch_irc/mod.ts";
 
 const channel = /*...*/;
 const nick = /*...*/;
 const pass = /*...*/;
 
-const client = new Bot({
+const client = new TwitchIrc.Client({
   credentials: { nick, pass }
 });
 client.on("privmsg", ({ user, message }) => {

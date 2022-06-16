@@ -7,7 +7,7 @@ import {
   AccountStatus,
   ChannelRole,
 } from "./ratelimit.ts";
-import { type Channel } from "./client.ts";
+import { type Channel } from "./base.ts";
 
 Deno.test("Bucket 1 token every 1s", () => {
   const bucket = new Bucket({ capacity: 1, period: 1000 });

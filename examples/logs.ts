@@ -1,9 +1,9 @@
-import { Bot, Channel } from "../mod.ts";
+import * as TwitchIrc from "../mod.ts";
 import { env } from "./util.ts";
 
-const CHANNEL = env("CHANNEL") as Channel;
+const CHANNEL = env("CHANNEL") as TwitchIrc.Channel;
 
-const client = new Bot();
+const client = new TwitchIrc.Client();
 
 client.on("privmsg", (m) => {
   console.log(m.raw.raw);

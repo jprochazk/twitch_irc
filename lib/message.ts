@@ -1,5 +1,5 @@
-import { type Channel } from "./client.ts";
-
+import { type Channel } from "./base.ts";
+import { kebabToCamelCase, KebabToCamelCase, splitOnce } from "./util.ts";
 export class Message {
   private constructor(
     /**
@@ -200,39 +200,6 @@ export function unescape(str: string): string {
   return out;
 }
 
-/**
- * Splits `str` by `delimiter`
- *
- * If `delimiter.length > 1`, the right side will contain everything past the first character of the delimiter.
- * For example:
- * ```ts
- * const [a, b] = splitOnce("test :test", " :");
- * assert(a === "test");
- * assert(b === ":test");
- * ```
- */
-function splitOnce(str: string, delimiter: string): [string, string | null] {
-  const index = str.indexOf(delimiter);
-  if (index === -1) return [str, null];
-  else return [str.slice(0, index), str.slice(index + 1)];
-}
-
-/**
- * Converts a string from `kebab-case` into `lowerCamelCase`.
- *
- * E.g. `reply-parent-display-name` is converted to `replyParentDisplayName`.
- */
-function kebabToCamelCase(str: string): string {
-  const parts = str.split("-");
-  if (parts.length > 1) {
-    parts[0] = parts[0].toLowerCase();
-    for (let i = 1; i < parts.length; ++i) {
-      parts[i] = parts[i].slice(0, 1).toUpperCase() + parts[i].slice(1).toLowerCase();
-    }
-  }
-  return parts.join("");
-}
-
 const knownIrcTags = [
   "msg-id",
   "badges",
@@ -292,12 +259,11 @@ const knownIrcTags = [
   "extendsub",
   "custom-reward-id",
 ] as const;
-type KebabToCamelCase<K extends string> = K extends `${infer Left}-${infer Right}`
-  ? `${Lowercase<Left>}${Capitalize<KebabToCamelCase<Right>>}`
-  : `${Lowercase<K>}`;
+
 type KnownTags = {
   readonly [K in typeof knownIrcTags[number] as KebabToCamelCase<K>]?: string;
 };
+
 type Tags = KnownTags & {
   readonly [tag: string]: string;
 };
@@ -322,7 +288,9 @@ const ircCommands = [
   "USERSTATE",
   "CAP",
 ] as const;
+
 const ircCommandSet = new Set<string>(ircCommands);
+
 export type IrcCommandKind = typeof ircCommands[number];
 
 export type Prefix = {

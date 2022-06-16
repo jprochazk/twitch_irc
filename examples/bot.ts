@@ -1,23 +1,19 @@
-import { Bot, Token, Channel } from "../mod.ts";
+import * as TwitchIrc from "../mod.ts";
 import { env } from "./util.ts";
 
 const LOGIN = env("LOGIN");
-const TOKEN = env("TOKEN") as Token;
-const CHANNEL = env("CHANNEL") as Channel;
+const TOKEN = env("TOKEN") as TwitchIrc.Token;
+const CHANNEL = env("CHANNEL") as TwitchIrc.Channel;
 
-const client = new Bot({
+const client = new TwitchIrc.Client({
   credentials: {
     nick: LOGIN,
-    pass: TOKEN as Token,
+    pass: TOKEN,
   },
 });
 
 client.on("privmsg", (event) => {
-  event = { ...event };
-  // @ts-expect-error: make the log easier to read
-  delete event.raw;
   console.log(event);
-
   if (event.message.startsWith("!ping")) {
     client.privmsg(
       CHANNEL,
