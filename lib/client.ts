@@ -3,6 +3,7 @@ import { type Message } from "./message.ts";
 import { ChannelRole, AccountStatus, DefaultLimiter, RateLimiter } from "./ratelimit.ts";
 import { SameMessageBypass } from "./smb.ts";
 import { LatencyTest } from "./latency.ts";
+import { PrivmsgQueue } from "./queue.ts";
 
 // TODO: remaining events
 // I'm probably missing some
@@ -13,6 +14,8 @@ import { LatencyTest } from "./latency.ts";
 // - usernotice -> sub, raid (https://git.kotmisia.pl/Mm2PL/docs/src/branch/master/irc_msg_ids.md#usernotice-msg-ids)
 // TODO: maintain userstate and roomstate so that rate limiters can work properly
 // TODO: consider adding "raw" event which just relays the basic message
+// TODO: emit error events based on `NOTICE` commands
+// TODO: option for message queue to discard messages instead of growing
 
 /**
  * High-level interface for building bots.
@@ -29,6 +32,7 @@ export class Client {
   private _sameMessageBypass = new SameMessageBypass();
   private _latencyTest: LatencyTest;
   private _limiter: RateLimiter;
+  private _privmsgQueue: PrivmsgQueue;
   private _channels = new Set<Channel>();
   private _listeners: { [K in keyof ChatEventData]: Set<(event: ChatEventData[K]) => void> } = {
     userstate: new Set(),
@@ -47,6 +51,12 @@ export class Client {
        */
       credentials?: Credentials;
       accountStatus?: AccountStatus;
+      /**
+       * Custom implementation of a rate limiter.
+       *
+       * The default one is based on the official Twitch IRC rate limiting documentation, but
+       * if for some reason you need a custom one, you can pass it through here.
+       */
       rateLimiter?: RateLimiter;
     } = {}
   ) {
@@ -55,15 +65,22 @@ export class Client {
       ...options,
     });
     this._latencyTest = new LatencyTest(this._client);
-    this._limiter = new DefaultLimiter({ status: options.accountStatus });
+    this._limiter = options.rateLimiter ?? new DefaultLimiter({ status: options.accountStatus });
+    this._privmsgQueue = new PrivmsgQueue((msg) => this._client.send(msg), this._limiter);
     this._client.on("message", this._onmessage);
     this._client.on("open", () => {
       this._latencyTest.start();
-      this._channels.forEach((channel) => this.join(channel));
+      this._channels.forEach((channel) => {
+        this.join(channel);
+        this._privmsgQueue.open(channel);
+      });
       this._emit("open");
     });
     this._client.on("close", () => {
       this._latencyTest.stop();
+      this._channels.forEach((channel) => {
+        this._privmsgQueue.close(channel);
+      });
       this._emit("close");
     });
     this._client.on("error", (e) => this._emit("error", e));
@@ -96,19 +113,15 @@ export class Client {
    * Any joined channels will be automatically re-joined upon reconnecting.
    */
   join(channel: Channel) {
+    // TODO(?): should this return a promise that resolves when the channel is successfully joined,
+    //          and rejects otherwise? Or should `joined` just be an event?
+    // TODO: handle failing to join a channel - it must be removed from `this._channels`
+    // TODO: join queue
+    // TODO: join batching (comma separated channels)
     if (!this._channels.has(channel)) {
       this._channels.add(channel);
-      // TODO: handle failing to join a channel
-
-      const doSend = () => {
-        const remaining = this._limiter.join(Date.now());
-        if (remaining === 0) {
-          this._client.send(`JOIN ${channel}\r\n`);
-        } else {
-          setTimeout(doSend, remaining);
-        }
-      };
-      doSend();
+      this._client.send(`JOIN ${channel}\r\n`);
+      this._privmsgQueue.open(channel);
     }
   }
 
@@ -116,11 +129,14 @@ export class Client {
    * Leaves `channel`.
    *
    * `channel` must begin with `#`.
+   *
+   * `PART` commands are sent without queueing.
    */
   part(channel: Channel) {
     if (this._channels.has(channel)) {
       this._channels.delete(channel);
       this._client.send(`PART ${channel}\r\n`);
+      this._privmsgQueue.close(channel);
     }
   }
 
@@ -129,7 +145,10 @@ export class Client {
    *
    * `channel` must begin with `#`.
    *
-   * Optionally, you can specify `tags`:
+   * `PRIVMSG` commands are sent through a queue.
+   * This methods returns a `Promise` which will resolve once the message is sent.
+   *
+   * You can optionall specify `tags`:
    * - `reply-parent-msg-id`, which will make the message a reply to the parent message.
    * - `client-nonce`, which will be present in the `USERSTATE` response, allowing userstates
    *   to be associated with the message that triggered it.
@@ -139,29 +158,21 @@ export class Client {
   privmsg(
     channel: Channel,
     message: string,
-    options: { replyParentMsgId?: string; clientNonce?: string } = {}
+    tags: { replyParentMsgId?: string; clientNonce?: string } = {}
   ) {
-    const tags = [];
-    if (options.replyParentMsgId) tags.push(`reply-parent-msg-id=${options.replyParentMsgId}`);
-    if (options.clientNonce) tags.push(`client-nonce=${options.clientNonce}`);
+    const tagPairs = [];
+    if (tags.replyParentMsgId) tagPairs.push(`reply-parent-msg-id=${tags.replyParentMsgId}`);
+    if (tags.clientNonce) tagPairs.push(`client-nonce=${tags.clientNonce}`);
 
     const body = `PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n` as const;
     let data: RawMessage;
-    if (tags.length === 0) {
+    if (tagPairs.length === 0) {
       data = body;
     } else {
-      data = `@${tags.join(";")} ${body}`;
+      data = `@${tagPairs.join(";")} ${body}`;
     }
 
-    const doSend = () => {
-      const remaining = this._limiter.privmsg(Date.now(), channel);
-      if (remaining === 0) {
-        this._client.send(data);
-      } else {
-        setTimeout(doSend, remaining);
-      }
-    };
-    doSend();
+    this._privmsgQueue.send(data, channel);
   }
 
   /**

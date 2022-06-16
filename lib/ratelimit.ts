@@ -1,5 +1,4 @@
 import { type Channel } from "./base.ts";
-import { sleep } from "./util.ts";
 
 const MILLISECOND = 1;
 const SECOND = MILLISECOND * 1000;
@@ -42,13 +41,10 @@ export interface RateLimiter {
  */
 export class DefaultLimiter implements RateLimiter {
   private _privmsg: PrivmsgLimiter;
-  private _slowmode: SlowModeLimiter;
   private _join: JoinLimiter;
-  private _sleep: (ms: number) => Promise<void> = sleep;
 
   constructor(options: { status?: AccountStatus } = {}) {
     this._privmsg = new PrivmsgLimiter(options);
-    this._slowmode = new SlowModeLimiter();
     this._join = new JoinLimiter(options);
   }
 
@@ -57,25 +53,15 @@ export class DefaultLimiter implements RateLimiter {
     channel: Channel,
     options: { role?: ChannelRole; slowModeSeconds?: number } = {}
   ): number {
-    // check per-channel + global limit first
-    const privmsg = this._privmsg.get(now, channel, options);
-    if (privmsg > 0) {
-      return privmsg;
-    }
-
-    // then check slowmode
-    const slowmode = this._slowmode.get(now, channel, options);
-    if (slowmode > 0) {
-      return slowmode;
-    }
-
-    return 0;
+    return this._privmsg.get(now, channel, options);
   }
 
   join(now: number): number {
     return this._join.get(now);
   }
 }
+
+const GLOBAL_SLOWMODE_SECONDS = 1.0;
 
 /**
  * Privmsg limiter, handling per-channel message limits based on vip/mod/streamer role,
@@ -84,7 +70,7 @@ export class DefaultLimiter implements RateLimiter {
  * You should use `DefaultLimiter` unless you have a good reason not to.
  */
 export class PrivmsgLimiter {
-  private _buckets: Record<Channel, Bucket> = {};
+  private _channels: Record<Channel, { msg: Bucket; slow: Bucket }> = {};
   private _global?: Bucket;
 
   constructor(options: { status?: AccountStatus } = {}) {
@@ -96,54 +82,35 @@ export class PrivmsgLimiter {
   /**
    * Returns the remaining number of milliseconds until a token is available.
    */
-  get(now: number, channel: Channel, options: { role?: ChannelRole } = {}): number {
-    const role = options.role ?? ChannelRole.Viewer;
-    const capacity = role >= ChannelRole.VIP ? 100 : 20;
-
-    this._buckets[channel] ??= new Bucket({ capacity, period: 30 * SECOND });
-    if (this._buckets[channel].capacity !== capacity) {
-      this._buckets[channel].setCapacity(capacity, now);
-    }
-
-    const perChannel = this._buckets[channel].get(now);
-    if (perChannel > 0) {
-      return perChannel;
-    }
-
-    if (this._global) {
-      return this._global?.get(now);
-    }
-
-    return 0;
-  }
-}
-
-/**
- * Slow mode limiter, handling per-channel slow mode, which defaults to 1s,
- * with correct treatment of vip/mod/streamer roles.
- *
- * You should use `DefaultLimiter` unless you have a good reason not to.
- */
-export class SlowModeLimiter {
-  private _buckets: Record<Channel, Bucket> = {};
-
-  /**
-   * Returns the remaining number of milliseconds until a token is available.
-   */
   get(
     now: number,
     channel: Channel,
     options: { slowModeSeconds?: number; role?: ChannelRole } = {}
-  ) {
+  ): number {
     const role = options.role ?? ChannelRole.Viewer;
-    const ms = role >= ChannelRole.VIP ? 1 * SECOND : (options?.slowModeSeconds ?? 1) * SECOND;
+    const messagesPerPeriod = role >= ChannelRole.VIP ? 100 : 20;
+    const slowModeSeconds =
+      role >= ChannelRole.VIP ? 0 : (options?.slowModeSeconds ?? GLOBAL_SLOWMODE_SECONDS) * SECOND;
 
-    this._buckets[channel] ??= new Bucket({ capacity: 1, period: ms });
-    if (this._buckets[channel].period !== ms) {
-      this._buckets[channel].setPeriod(ms, now);
-    }
+    this._channels[channel] ??= {
+      msg: new Bucket({ capacity: messagesPerPeriod, period: 30 * SECOND }),
+      slow: new Bucket({ capacity: 1, period: slowModeSeconds }),
+    };
 
-    return this._buckets[channel].get(now);
+    const ch = this._channels[channel];
+    ch.msg.setCapacity(messagesPerPeriod, now);
+    ch.slow.setPeriod(slowModeSeconds, now);
+
+    // if any bucket is empty, treat all of them as empty,
+    // and return the maximum time remaining until a token is available
+    const remaining = Math.max(ch.msg.peek(now), ch.slow.peek(now), this._global?.peek(now) ?? 0);
+    if (remaining > 0) return remaining;
+
+    // if no bucket is empty, grab a token from all of them at the same time
+    ch.msg.get(now);
+    ch.slow.get(now);
+    this._global?.get(now);
+    return 0;
   }
 }
 
@@ -188,6 +155,14 @@ export class Bucket {
     this._tokens = this._capacity;
   }
 
+  peek(now: number): number {
+    if (this._tokens > 0) {
+      return 0;
+    }
+
+    return this._period - (now - this._lastRefresh);
+  }
+
   /**
    * Returns the remaining number of milliseconds until a token is available.
    */
@@ -216,6 +191,7 @@ export class Bucket {
    * one period after setting it before being able to receiving any tokens.
    */
   setCapacity(value: number, now: number) {
+    if (this._capacity === value) return;
     this._capacity = value;
     this._tokens = 0;
     this._lastRefresh = now;
@@ -232,6 +208,7 @@ export class Bucket {
    * one period after setting it before being able to receiving any tokens.
    */
   setPeriod(value: number, now: number) {
+    if (this._period === value) return;
     this._period = value;
     this._tokens = 0;
     this._lastRefresh = now;

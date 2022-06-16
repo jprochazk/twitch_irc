@@ -13,7 +13,7 @@ const client = new TwitchIrc.Client({
 });
 
 client.on("privmsg", (event) => {
-  console.log(event);
+  //console.log(event);
   if (event.message.startsWith("!ping")) {
     client.privmsg(
       CHANNEL,
@@ -28,6 +28,9 @@ client.on("privmsg", (event) => {
 
 client.on("open", () => {
   client.join(CHANNEL);
+  for (let i = 0; i < 100; ++i) {
+    client.privmsg(CHANNEL, `test ${i}`);
+  }
 });
 
 // @ts-expect-error: debugging
