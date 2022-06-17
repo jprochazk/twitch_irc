@@ -1,7 +1,7 @@
 export class SameMessageBypass {
   private static CHARS = [
     "",
-    // NOTE: second space is `U+2800`
+    // second space is intentionally `U+2800`
     " ⠀",
   ];
   private flag = 0;

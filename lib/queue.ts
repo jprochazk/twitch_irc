@@ -3,6 +3,10 @@ import { noop } from "./util.ts";
 import { Channel, RawMessage } from "./base.ts";
 import { RateLimiter } from "./ratelimit.ts";
 
+// TODO: option for message queue to discard messages instead of growing
+// TODO: join queue
+// TODO: join batching (comma separated channels)
+
 export type Sender<T> = (value: T) => void;
 
 export type DispatchContext = {

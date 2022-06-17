@@ -6,7 +6,7 @@ const CHANNEL = env("CHANNEL") as TwitchIrc.Channel;
 const client = new TwitchIrc.Client();
 
 client.on("privmsg", (m) => {
-  console.log(m.raw.raw);
+  // console.log(m.raw.raw);
 });
 
 client.on("open", () => {
