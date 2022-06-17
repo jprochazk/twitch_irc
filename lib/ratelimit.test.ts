@@ -71,6 +71,8 @@ Deno.test("Join limiter (verified)", () => {
   testing.assertEquals(limiter.get(10 * 1000), 10 * 1000);
 });
 
+// TODO: add test for (normal viewer) global limit
+
 Deno.test("Privmsg limiter (normal viewer)", () => {
   const limiter = new PrivmsgLimiter({ status: AccountStatus.Normal });
   const channel = "#test";
@@ -88,9 +90,9 @@ Deno.test("Privmsg limiter (normal moderator)", () => {
   const channel = "#test";
   const role = ChannelRole.Moderator;
 
-  // 100 tokens every 30s
+  // 20 tokens every 30s
   // role >= VIP -> not affected by slowmode
-  for (let i = 0; i < 100; ++i) {
+  for (let i = 0; i < 20; ++i) {
     testing.assertEquals(limiter.get(0, channel, { role }), 0);
   }
   testing.assertEquals(limiter.get(0, channel, { role }), 30 * 1000);
@@ -107,7 +109,10 @@ Deno.test("Privmsg limiter (verified viewer) global limit", () => {
   let tokens = 7500;
   for (const channel of channels) {
     // (per-channel) 1 token every 1s + 20 tokens every 30s
-    for (let i = 0; i < 20; ++i) {
+    testing.assertEquals(limiter.get(0, channel, { role }), 0);
+    tokens -= 1;
+    for (let i = 1; i < 20; ++i) {
+      testing.assertEquals(limiter.get(i * 1.0 * 1000 - 500, channel, { role }), 500);
       testing.assertEquals(limiter.get(i * 1.0 * 1000, channel, { role }), 0);
       tokens -= 1;
     }
@@ -120,7 +125,7 @@ Deno.test("Privmsg limiter (verified viewer) global limit", () => {
 
 Deno.test("Privmsg limiter (verified moderator) global limit", () => {
   const limiter = new PrivmsgLimiter({ status: AccountStatus.Verified });
-  const channels = Array(7500 / 100)
+  const channels = Array(7500 / 20)
     .fill(0)
     .map((_, i) => `#${i}`) as Channel[];
   const role = ChannelRole.Moderator;
@@ -128,9 +133,9 @@ Deno.test("Privmsg limiter (verified moderator) global limit", () => {
   // (global) 7500 tokens every 30s
   let tokens = 7500;
   for (const channel of channels) {
-    // (per-channel) 100 tokens every 30s
+    // (per-channel) 20 tokens every 30s
     // role >= VIP -> not affected by slowmode
-    for (let i = 0; i < 100; ++i) {
+    for (let i = 0; i < 20; ++i) {
       testing.assertEquals(limiter.get(0, channel, { role }), 0);
       tokens -= 1;
     }

@@ -75,12 +75,15 @@ const GLOBAL_SLOWMODE_SECONDS = 1.0;
  */
 export class PrivmsgLimiter {
   private _channels: Record<Channel, { msg: Bucket; slow: Bucket }> = {};
-  private _global?: Bucket;
+  private _global: Bucket;
+  private _status: AccountStatus;
 
   constructor(options: { status?: AccountStatus } = {}) {
-    if (options.status === AccountStatus.Verified) {
-      this._global = new Bucket({ capacity: 7500, period: 30 * SECOND });
-    }
+    this._status = options.status ?? AccountStatus.Normal;
+    this._global = new Bucket({
+      capacity: options.status === AccountStatus.Verified ? 7500 : 20,
+      period: 30 * SECOND,
+    });
   }
 
   /**
@@ -92,17 +95,15 @@ export class PrivmsgLimiter {
     options: { slowModeSeconds?: number; role?: ChannelRole } = {}
   ): number {
     const role = options.role ?? ChannelRole.Viewer;
-    const messagesPerPeriod = role >= ChannelRole.VIP ? 100 : 20;
     const slowModeSeconds =
       role >= ChannelRole.VIP ? 0 : (options?.slowModeSeconds ?? GLOBAL_SLOWMODE_SECONDS) * SECOND;
 
     this._channels[channel] ??= {
-      msg: new Bucket({ capacity: messagesPerPeriod, period: 30 * SECOND }),
+      msg: new Bucket({ capacity: 20, period: 30 * SECOND }),
       slow: new Bucket({ capacity: 1, period: slowModeSeconds }),
     };
 
     const ch = this._channels[channel];
-    ch.msg.setCapacity(messagesPerPeriod, now);
     ch.slow.setPeriod(slowModeSeconds, now);
 
     // if any bucket is empty, treat all of them as empty,
