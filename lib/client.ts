@@ -236,11 +236,6 @@ export class Client {
   }
 
   private _onmessage = (data: Message) => {
-    // TODO: remaining events
-    // I'm probably missing some
-    // - host
-    // - roomstate
-    // - usernotice -> sub, raid (https://git.kotmisia.pl/Mm2PL/docs/src/branch/master/irc_msg_ids.md#usernotice-msg-ids)
     this._emit("raw", data);
 
     switch (data.command.kind) {

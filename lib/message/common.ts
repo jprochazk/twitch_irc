@@ -21,8 +21,7 @@ export function parseUser(data: Message): User {
   const user: User = {
     id,
     role,
-    // NOTE: used in `globaluserstate.ts` where `prefix` doesn't exist,
-    // so we assign it credentials.nick instead
+    // used in `globaluserstate.ts` where `prefix` doesn't exist, so we assign it credentials.nick instead
     login: login!,
     badges,
     badgeInfo,
