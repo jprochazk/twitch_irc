@@ -3,7 +3,7 @@ import { type Message } from "./message.ts";
 import { AccountStatus, DefaultLimiter, RateLimiter } from "./ratelimit.ts";
 import { SameMessageBypass } from "./smb.ts";
 import { LatencyTest } from "./latency.ts";
-import { PrivmsgQueue } from "./queue.ts";
+import { JoinQueue, PrivmsgQueue } from "./queue.ts";
 import { Privmsg, UserState, Join, Part } from "./message/index.ts";
 
 // TODO: maintain userstate and roomstate so that rate limiters can work properly
@@ -25,6 +25,7 @@ export class Client {
   private _latencyTest: LatencyTest;
   private _limiter: RateLimiter;
   private _privmsgQueue: PrivmsgQueue;
+  private _joinQueue: JoinQueue;
   private _channels = new Set<Channel>();
   private _listeners: { [K in keyof ChatEventData]: Set<(event: ChatEventData[K]) => void> } =
     // deno-lint-ignore no-explicit-any
@@ -59,6 +60,7 @@ export class Client {
       this._limiter,
       () => this._client.socketReadyState
     );
+    this._joinQueue = new JoinQueue((msg) => this._client.send(msg), this._limiter);
     this._client.on("message", this._onmessage);
     this._client.on("open", this._onopen);
     this._client.on("close", this._onclose);
@@ -99,8 +101,7 @@ export class Client {
 
   private _join(channel: Channel, filterJoined: boolean): Promise<void> {
     if (filterJoined && this._channels.has(channel)) return Promise.resolve();
-    // TODO: join queue - `chunk` would be moved there
-    this._client.send(`JOIN ${channel}\r\n`);
+    this._joinQueue.send(`JOIN ${channel}\r\n`);
 
     return new Promise((resolve, reject) => {
       const off = this.on("join", (e) => {
@@ -247,11 +248,14 @@ export class Client {
   private _onopen = () => {
     this._channels.forEach((channel) => this._join(channel, false));
     this._latencyTest.start();
+    this._joinQueue.pause(false);
     this._emit("open");
   };
 
   private _onclose = () => {
     this._emit("close");
+    this._joinQueue.pause(true);
+    this._joinQueue.clear();
     this._latencyTest.stop();
   };
 

@@ -34,6 +34,14 @@ export class GrowableRingBuffer<T> {
     return item;
   }
 
+  clear() {
+    for (let i = 0; i < this._buffer.length; ++i) {
+      this._buffer[i] = null;
+    }
+    this._tail = 0;
+    this._head = 0;
+  }
+
   private _grow() {
     const newBuffer = new Array<T | null>(this._buffer.length * GROWTH_FACTOR).fill(null);
     let head = 0;
