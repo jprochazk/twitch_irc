@@ -31,6 +31,7 @@ client.on("open", () => {
 - Auto-complete tag names
 - Latency measurement
 - Strong type safety[^2]
+- Rate limiting
 
 [^1]: Some tag values can have a space in them, and the [example parser by Twitch](https://dev.twitch.tv/docs/irc/example-parser) will not correctly handle that case.
 [^2]: The library uses string and template literal types extensively, for example to ensure that a channel has the `#` prefix - similar usage of these advanced type features simplifies the internals of the library greatly, and contributes towards making it less error prone to use.
