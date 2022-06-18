@@ -14,7 +14,7 @@ export namespace Privmsg {
       user: parseUser(data),
       message: data.params.at(-1)!,
       sentAt: data.tag("tmiSentTs", "number")!,
-      emotes: data.tag("emotes", "csv")?.map(parseEmote) ?? [],
+      emotes: data.tags!.emotes?.split("/")?.map(parseEmote) ?? [],
     };
   }
 }
