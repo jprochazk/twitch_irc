@@ -71,8 +71,6 @@ Deno.test("Join limiter (verified)", () => {
   testing.assertEquals(limiter.get(10 * 1000), 10 * 1000);
 });
 
-// TODO: add test for (normal viewer) global limit
-
 Deno.test("Privmsg limiter (normal viewer)", () => {
   const limiter = new PrivmsgLimiter({ status: AccountStatus.Normal });
   const channel = "#test";

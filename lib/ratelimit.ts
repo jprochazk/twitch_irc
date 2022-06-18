@@ -1,9 +1,5 @@
 import { type Channel } from "./base.ts";
 
-// TODO: rate limiting is global
-// - privmsg global (attach it to current `_global` bucket)
-// - slowmode per-channel
-
 const MILLISECOND = 1;
 const SECOND = MILLISECOND * 1000;
 // const MINUTE = SECOND * 60;

@@ -6,10 +6,11 @@ import { RateLimiter } from "./ratelimit.ts";
 // TODO: option for message queue to discard messages instead of growing
 // TODO: join queue
 // TODO: join batching (comma separated channels)
+// TODO: handle JOIN and PART commands to figure out which channels the bot is actually in
 
-export type Sender<T> = (value: T) => void;
+type Sender<T> = (value: T) => void;
 
-export type DispatchContext = {
+type DispatchContext = {
   dispatch(ctx: DispatchContext): void;
   timerId: number;
   queue: GrowableRingBuffer<RawMessage>;
