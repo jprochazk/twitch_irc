@@ -4,7 +4,19 @@ import { AccountStatus, DefaultLimiter, RateLimiter } from "./ratelimit.ts";
 import { SameMessageBypass } from "./smb.ts";
 import { LatencyTest } from "./latency.ts";
 import { JoinQueue, PrivmsgQueue } from "./queue.ts";
-import { Privmsg, UserState, Join, Part } from "./message/index.ts";
+import {
+  Privmsg,
+  UserState,
+  Join,
+  Part,
+  ClearMsg,
+  ClearChat,
+  GlobalUserState,
+  HostTarget,
+  Reconnect,
+  UserNotice,
+  Notice,
+} from "./message/index.ts";
 
 // TODO: maintain userstate and roomstate so that rate limiters can work properly
 // TODO: emit error events based on `NOTICE` commands
@@ -23,7 +35,7 @@ export class Client {
   private _client: BaseClient;
   private _sameMessageBypass = new SameMessageBypass();
   private _latencyTest: LatencyTest;
-  private _limiter: RateLimiter;
+  private _rateLimiter: RateLimiter;
   private _privmsgQueue: PrivmsgQueue;
   private _joinQueue: JoinQueue;
   private _channels = new Set<Channel>();
@@ -54,17 +66,23 @@ export class Client {
       ...options,
     });
     this._latencyTest = new LatencyTest(this._client);
-    this._limiter = options.rateLimiter ?? new DefaultLimiter({ status: options.accountStatus });
+    this._rateLimiter =
+      options.rateLimiter ?? new DefaultLimiter({ status: options.accountStatus });
     this._privmsgQueue = new PrivmsgQueue(
       (msg) => this._client.send(msg),
-      this._limiter,
+      this._rateLimiter,
       () => this._client.socketReadyState
     );
-    this._joinQueue = new JoinQueue((msg) => this._client.send(msg), this._limiter);
+    this._joinQueue = new JoinQueue((msg) => this._client.send(msg), this._rateLimiter);
     this._client.on("message", this._onmessage);
     this._client.on("open", this._onopen);
     this._client.on("close", this._onclose);
     this._client.on("error", this._onerror);
+    this.on("part", (e) => {
+      if (e.user === this._client.nick) {
+        this._channels.delete(e.channel);
+      }
+    });
   }
 
   /** Current latency to the server. */
@@ -242,6 +260,34 @@ export class Client {
         this._emit("part", Part.parse(data));
         return;
       }
+      case "CLEARCHAT": {
+        this._emit("clearchat", ClearChat.parse(data));
+        return;
+      }
+      case "CLEARMSG": {
+        this._emit("clearmsg", ClearMsg.parse(data));
+        return;
+      }
+      case "GLOBALUSERSTATE": {
+        this._emit("globaluserstate", GlobalUserState.parse(data, this._client.nick));
+        return;
+      }
+      case "HOSTTARGET": {
+        this._emit("hosttarget", HostTarget.parse(data));
+        return;
+      }
+      case "RECONNECT": {
+        this._emit("reconnect", Reconnect.parse(data));
+        return;
+      }
+      case "USERNOTICE": {
+        this._emit("usernotice", UserNotice.parse(data));
+        return;
+      }
+      case "NOTICE": {
+        this._emit("notice", Notice.parse(data, this._client.nick));
+        return;
+      }
     }
   };
 
@@ -277,9 +323,32 @@ type ChatEventData = {
   userstate: UserState;
   join: Join;
   part: Part;
+  clearchat: ClearChat;
+  clearmsg: ClearMsg;
+  globaluserstate: GlobalUserState;
+  hosttarget: HostTarget;
+  reconnect: Reconnect;
+  usernotice: UserNotice;
+  notice: Notice;
   raw: Message;
 };
-const Events = ["open", "close", "error", "privmsg", "userstate", "join", "part", "raw"] as const;
+const Events = [
+  "open",
+  "close",
+  "error",
+  "privmsg",
+  "userstate",
+  "join",
+  "part",
+  "clearchat",
+  "clearmsg",
+  "globaluserstate",
+  "hosttarget",
+  "reconnect",
+  "usernotice",
+  "notice",
+  "raw",
+] as const;
 type _check = typeof Events[number] extends keyof ChatEventData
   ? keyof ChatEventData extends typeof Events[number]
     ? "ok"

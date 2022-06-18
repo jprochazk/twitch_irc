@@ -258,6 +258,7 @@ const knownIrcTags = [
   "color",
   "extendsub",
   "custom-reward-id",
+  "target-user-id",
 ] as const;
 
 type KnownTags = {

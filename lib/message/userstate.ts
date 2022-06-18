@@ -7,16 +7,17 @@ import { ChatEvent, parseBadges, parseRole } from "./common.ts";
 export namespace UserState {
   export function parse(data: Message): UserState {
     const badges = parseBadges(data.tag("badges", "csv") ?? []);
-    return {
+    const result: UserState = {
       raw: data,
       type: "userstate",
       channel: data.channel!,
       role: parseRole(badges),
       emoteSets: data.tag("emoteSets", "csv") ?? [],
-      color: data.tags!.color,
       badges,
       badgeInfo: parseBadges(data.tag("badgeInfo", "csv") ?? []),
     };
+    if (data.tags?.color) result.color = data.tags.color;
+    return result;
   }
 }
 

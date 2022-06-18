@@ -6,12 +6,14 @@ export type ChatEvent<Type extends string> = {
   type: Type;
 };
 
-/** Assumes `data` contains all required information for `User` */
+/**
+ * Assumes `data` contains all required information for `User`.
+ */
 export function parseUser(data: Message): User {
   const id = data.tags!.userId!;
   const badges = parseBadges(data.tag("badges", "csv") ?? []);
   const role = parseRole(badges);
-  const login = data.prefix!.nick!;
+  const login = data.prefix?.nick;
   const badgeInfo = parseBadges(data.tag("badgeInfo", "csv") ?? []);
   const displayName = data.tag("displayName") ?? undefined;
   const color = data.tags!.color;
@@ -19,7 +21,9 @@ export function parseUser(data: Message): User {
   const user: User = {
     id,
     role,
-    login,
+    // NOTE: used in `globaluserstate.ts` where `prefix` doesn't exist,
+    // so we assign it credentials.nick instead
+    login: login!,
     badges,
     badgeInfo,
   };

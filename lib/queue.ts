@@ -4,9 +4,6 @@ import { Channel, RawMessage } from "./base.ts";
 import { RateLimiter } from "./ratelimit.ts";
 
 // TODO: option for message queue to discard messages instead of growing
-// TODO: join queue
-// TODO: join batching (comma separated channels)
-// TODO: handle JOIN and PART commands to figure out which channels the bot is actually in
 
 export class JoinQueue {
   private _rateLimiter: RateLimiter;
