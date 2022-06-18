@@ -1,6 +1,6 @@
 import { Channel } from "../base.ts";
 import { Message } from "../message.ts";
-import { parseUser, parseEmote, Emote, User } from "./common.ts";
+import { parseUser, parseEmote, Emote, User, ChatEvent } from "./common.ts";
 
 // deno-lint-ignore no-namespace
 export namespace Privmsg {
@@ -19,9 +19,7 @@ export namespace Privmsg {
   }
 }
 
-export type Privmsg = {
-  raw: Message;
-  type: "privmsg";
+export type Privmsg = ChatEvent<"privmsg"> & {
   /**
    * Name of the channel this message was sent from.
    */

@@ -12,6 +12,8 @@ const client = new TwitchIrc.Client({
   },
 });
 
+client.on("raw", (e) => console.log(e.raw));
+
 client.on("privmsg", (event) => {
   //console.log(event);
   if (event.message.startsWith("!ping")) {

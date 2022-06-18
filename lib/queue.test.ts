@@ -35,13 +35,17 @@ class Setup {
       }
     },
   };
+
+  getSocketState = () => {
+    return WebSocket.OPEN;
+  };
 }
 
 Deno.test("PrivmsgQueue dispatch immediate", () => {
   const setup = new Setup();
 
   const channel = "#test";
-  const queue = new PrivmsgQueue(setup.sender, setup.rateLimiter);
+  const queue = new PrivmsgQueue(setup.sender, setup.rateLimiter, setup.getSocketState);
   // @ts-expect-error: accesing private property in test
   queue._timer.set = setup.timer.set;
   // @ts-expect-error: accesing private property in test
@@ -71,7 +75,7 @@ Deno.test("PrivmsgQueue dispatch delayed", () => {
 
   const channel = "#test";
   const message = "test\r\n";
-  const queue = new PrivmsgQueue(setup.sender, setup.rateLimiter);
+  const queue = new PrivmsgQueue(setup.sender, setup.rateLimiter, setup.getSocketState);
   // @ts-expect-error: accesing private property in test
   queue._timer.set = setup.timer.set;
   // @ts-expect-error: accesing private property in test

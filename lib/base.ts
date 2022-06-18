@@ -26,7 +26,7 @@ export class BaseClient {
   private _state: State = "connecting";
 
   private _capabilities: Capability[];
-  private _credentials?: Credentials;
+  private _credentials: Credentials;
   private _reconnect: boolean;
   private _url: string;
 
@@ -46,7 +46,11 @@ export class BaseClient {
     } = {}
   ) {
     this._capabilities = options.capabilities ?? [];
-    this._credentials = options.credentials;
+    this._credentials = options.credentials ?? {
+      nick: `justinfan${Math.floor(Math.random() * 89999 + 10000)}`,
+      // deno-lint-ignore no-explicit-any
+      pass: "amogus" as any,
+    };
     this._reconnect = options.reconnect ?? true;
     this._url = options.url ?? "wss://irc-ws.chat.twitch.tv";
 
@@ -56,6 +60,14 @@ export class BaseClient {
   /** Current state of the socket. */
   get state(): State {
     return this._state;
+  }
+
+  get socketReadyState(): number {
+    return this._ws.readyState;
+  }
+
+  get nick(): string {
+    return this._credentials.nick;
   }
 
   /**

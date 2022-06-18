@@ -5,12 +5,13 @@ const CHANNEL = env("CHANNEL") as TwitchIrc.Channel;
 
 const client = new TwitchIrc.Client();
 
-client.on("privmsg", (m) => {
-  // console.log(m.raw.raw);
+client.on("raw", (m) => {
+  console.log(m.raw);
 });
 
-client.on("open", () => {
-  client.join(CHANNEL);
+client.on("open", async () => {
+  await client.join(CHANNEL);
+  console.log("joined", CHANNEL);
 });
 
 // @ts-expect-error: debugging

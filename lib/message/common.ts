@@ -1,6 +1,11 @@
 import { Message } from "../message.ts";
 import { ChannelRole } from "../ratelimit.ts";
 
+export type ChatEvent<Type extends string> = {
+  raw: Message;
+  type: Type;
+};
+
 /** Assumes `data` contains all required information for `User` */
 export function parseUser(data: Message): User {
   const id = data.tags!.userId!;
@@ -70,7 +75,8 @@ export function parseRole(badges: Record<string, string>): ChannelRole {
 export function parseBadges(badges: string[]) {
   const result: Record<string, string> = {};
   for (let i = 0; i < badges.length; ++i) {
-    const [name, info] = badges[i].split("/");
+    const splitIndex = badges[i].indexOf("/");
+    const [name, info] = [badges[i].slice(0, splitIndex), badges[i].slice(splitIndex)];
     result[name] = info;
   }
   return result;

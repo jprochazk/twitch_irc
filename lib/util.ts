@@ -9,6 +9,20 @@ export function noop() {}
 
 export const never = <T = void>() => new Promise<T>(noop);
 
+export function* chunk<S extends string>(strings: S[], size = 2048) {
+  const out: S[] = [];
+  let len = 0;
+  for (const str of strings) {
+    if (len >= size) {
+      yield out;
+      out.length = len = 0;
+    } else {
+      out.push(str);
+      len += str.length;
+    }
+  }
+}
+
 export class Queue<T> {
   private _put: T[] = [];
   private _get: T[] = [];

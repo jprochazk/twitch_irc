@@ -1,6 +1,7 @@
+import { Channel } from "../base.ts";
 import { Message } from "../message.ts";
 import { ChannelRole } from "../ratelimit.ts";
-import { parseBadges, parseRole } from "./common.ts";
+import { ChatEvent, parseBadges, parseRole } from "./common.ts";
 
 // deno-lint-ignore no-namespace
 export namespace UserState {
@@ -9,6 +10,7 @@ export namespace UserState {
     return {
       raw: data,
       type: "userstate",
+      channel: data.channel!,
       role: parseRole(badges),
       emoteSets: data.tag("emoteSets", "csv") ?? [],
       color: data.tags!.color,
@@ -18,9 +20,8 @@ export namespace UserState {
   }
 }
 
-export type UserState = {
-  raw: Message;
-  type: "userstate";
+export type UserState = ChatEvent<"userstate"> & {
+  channel: Channel;
   role: ChannelRole;
   /**
    * A comma-delimited list of IDs that identify the emote sets that the user has access to.

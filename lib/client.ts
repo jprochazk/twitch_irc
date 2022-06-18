@@ -4,7 +4,7 @@ import { AccountStatus, DefaultLimiter, RateLimiter } from "./ratelimit.ts";
 import { SameMessageBypass } from "./smb.ts";
 import { LatencyTest } from "./latency.ts";
 import { PrivmsgQueue } from "./queue.ts";
-import { Privmsg, UserState } from "./message/index.ts";
+import { Privmsg, UserState, Join, Part } from "./message/index.ts";
 
 // TODO: maintain userstate and roomstate so that rate limiters can work properly
 // TODO: emit error events based on `NOTICE` commands
@@ -26,13 +26,9 @@ export class Client {
   private _limiter: RateLimiter;
   private _privmsgQueue: PrivmsgQueue;
   private _channels = new Set<Channel>();
-  private _listeners: { [K in keyof ChatEventData]: Set<(event: ChatEventData[K]) => void> } = {
-    userstate: new Set(),
-    privmsg: new Set(),
-    open: new Set(),
-    close: new Set(),
-    error: new Set(),
-  };
+  private _listeners: { [K in keyof ChatEventData]: Set<(event: ChatEventData[K]) => void> } =
+    // deno-lint-ignore no-explicit-any
+    Object.fromEntries(Events.map((event) => [event, new Set()])) as any;
 
   constructor(
     options: {
@@ -58,24 +54,15 @@ export class Client {
     });
     this._latencyTest = new LatencyTest(this._client);
     this._limiter = options.rateLimiter ?? new DefaultLimiter({ status: options.accountStatus });
-    this._privmsgQueue = new PrivmsgQueue((msg) => this._client.send(msg), this._limiter);
+    this._privmsgQueue = new PrivmsgQueue(
+      (msg) => this._client.send(msg),
+      this._limiter,
+      () => this._client.socketReadyState
+    );
     this._client.on("message", this._onmessage);
-    this._client.on("open", () => {
-      this._latencyTest.start();
-      this._channels.forEach((channel) => {
-        this.join(channel);
-        this._privmsgQueue.open(channel);
-      });
-      this._emit("open");
-    });
-    this._client.on("close", () => {
-      this._latencyTest.stop();
-      this._channels.forEach((channel) => {
-        this._privmsgQueue.close(channel);
-      });
-      this._emit("close");
-    });
-    this._client.on("error", (e) => this._emit("error", e));
+    this._client.on("open", this._onopen);
+    this._client.on("close", this._onclose);
+    this._client.on("error", this._onerror);
   }
 
   /** Current latency to the server. */
@@ -98,21 +85,36 @@ export class Client {
   }
 
   /**
-   * Joins `channel`.
+   * Joins a `channel`.
    *
    * `channel` must begin with `#`.
    *
+   * This returns a `Promise` that resolves once the channel has been joined successfully.
+   *
    * Any joined channels will be automatically re-joined upon reconnecting.
    */
-  join(channel: Channel) {
-    // TODO(?): should this return a promise that resolves when the channel is successfully joined,
-    //          and rejects otherwise? Or should `joined` just be an event?
-    // TODO: handle failing to join a channel - it must be removed from `this._channels`
-    if (!this._channels.has(channel)) {
-      this._channels.add(channel);
-      this._client.send(`JOIN ${channel}\r\n`);
-      this._privmsgQueue.open(channel);
-    }
+  join(channel: Channel): Promise<void> {
+    return this._join(channel, true);
+  }
+
+  private _join(channel: Channel, filterJoined: boolean): Promise<void> {
+    if (filterJoined && this._channels.has(channel)) return Promise.resolve();
+    // TODO: join queue - `chunk` would be moved there
+    this._client.send(`JOIN ${channel}\r\n`);
+
+    return new Promise((resolve, reject) => {
+      const off = this.on("join", (e) => {
+        if (e.channel === channel && e.user === this._client.nick) {
+          off();
+          this._channels.add(channel);
+          resolve();
+        }
+      });
+      this.on("close", () => {
+        off();
+        reject();
+      });
+    });
   }
 
   /**
@@ -123,11 +125,17 @@ export class Client {
    * `PART` commands are sent without queueing.
    */
   part(channel: Channel) {
-    if (this._channels.has(channel)) {
-      this._channels.delete(channel);
-      this._client.send(`PART ${channel}\r\n`);
-      this._privmsgQueue.close(channel);
-    }
+    this._client.send(`PART ${channel}\r\n`);
+    this._channels.delete(channel);
+  }
+
+  /**
+   * Returns `true` if this bot is in `channel`.
+   *
+   * `channel` must begin with `#`.
+   */
+  joined(channel: Channel) {
+    return this._channels.has(channel);
   }
 
   /**
@@ -167,9 +175,25 @@ export class Client {
 
   /**
    * Connects an event callback.
+   *
+   * Returns a function that can be called to unsubscribe. Alternatively,
+   * you can also call `.off` with the same reference to the same callback.
    */
-  on<Type extends keyof ChatEventData>(type: Type, callback: (event: ChatEventData[Type]) => void) {
+  on<Type extends keyof ChatEventData>(
+    type: Type,
+    callback: (event: ChatEventData[Type]) => void,
+    options: { once?: boolean } = {}
+  ): () => void {
+    if (options.once) {
+      const wrapper = (event: ChatEventData[Type]) => {
+        callback(event);
+        this._listeners[type].delete(wrapper);
+      };
+      callback = wrapper;
+    }
+
     this._listeners[type].add(callback);
+    return () => this._listeners[type].delete(callback);
   }
 
   /**
@@ -196,11 +220,10 @@ export class Client {
     // TODO: remaining events
     // I'm probably missing some
     // - host
-    // - join
-    // - part
     // - roomstate
     // - usernotice -> sub, raid (https://git.kotmisia.pl/Mm2PL/docs/src/branch/master/irc_msg_ids.md#usernotice-msg-ids)
-    // TODO: consider adding "raw" event which just relays the basic message
+    this._emit("raw", data);
+
     switch (data.command.kind) {
       case "PRIVMSG": {
         this._emit("privmsg", Privmsg.parse(data));
@@ -210,17 +233,30 @@ export class Client {
         this._emit("userstate", UserState.parse(data));
         return;
       }
+      case "JOIN": {
+        this._emit("join", Join.parse(data));
+        return;
+      }
+      case "PART": {
+        this._emit("part", Part.parse(data));
+        return;
+      }
     }
   };
-}
 
-type ChatEventData = {
-  open: void;
-  close: void;
-  error: unknown;
-  privmsg: Privmsg;
-  userstate: UserState;
-};
+  private _onopen = () => {
+    this._channels.forEach((channel) => this._join(channel, false));
+    this._latencyTest.start();
+    this._emit("open");
+  };
+
+  private _onclose = () => {
+    this._emit("close");
+    this._latencyTest.stop();
+  };
+
+  private _onerror = (e: unknown) => this._emit("error", e);
+}
 
 type WithData = {
   [K in keyof ChatEventData as ChatEventData[K] extends void ? never : K]: ChatEventData[K];
@@ -228,3 +264,21 @@ type WithData = {
 type WithoutData = {
   [K in keyof ChatEventData as ChatEventData[K] extends void ? K : never]: ChatEventData[K];
 };
+
+type ChatEventData = {
+  open: void;
+  close: void;
+  error: unknown;
+  privmsg: Privmsg;
+  userstate: UserState;
+  join: Join;
+  part: Part;
+  raw: Message;
+};
+const Events = ["open", "close", "error", "privmsg", "userstate", "join", "part", "raw"] as const;
+type _check = typeof Events[number] extends keyof ChatEventData
+  ? keyof ChatEventData extends typeof Events[number]
+    ? "ok"
+    : "Missing events in Events"
+  : "Missing events in ChatEventData";
+const _check: _check = "ok";
