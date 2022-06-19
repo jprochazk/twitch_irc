@@ -20,7 +20,6 @@ import {
 } from "./message/index.ts";
 import { DeepReadonly } from "./util.ts";
 
-// TODO: maintain userstate and roomstate so that rate limiters can work properly
 // TODO: emit error events based on `NOTICE` commands
 
 /**
