@@ -31,6 +31,7 @@ import { DeepReadonly } from "./util.ts";
  * - Automatically rejoining channels upon (re)connecting
  * - Measuring latency
  * - Same message bypass
+ * - Rate limiting
  */
 export class Client {
   private _client: BaseClient;
