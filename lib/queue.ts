@@ -3,8 +3,6 @@ import { noop } from "./util.ts";
 import { Channel, RawMessage } from "./base.ts";
 import { RateLimiter } from "./ratelimit.ts";
 
-// TODO: option for message queue to discard messages instead of growing
-
 export class JoinQueue {
   private _rateLimiter: RateLimiter;
   private _sender: Sender<RawMessage>;
@@ -96,9 +94,10 @@ export class PrivmsgQueue {
    * If `channel` is not open, this will open it before queueing the message.
    */
   send(message: RawMessage, channel: Channel) {
-    const ctx = this._channels[channel];
-    if (!ctx) this.open(channel);
-    ctx.queue.put(message);
+    if (!(channel in this._channels)) {
+      this.open(channel);
+    }
+    this._channels[channel].queue.put(message);
   }
 
   private _ondispatch(ctx: PrivmsgDispatchContext) {
