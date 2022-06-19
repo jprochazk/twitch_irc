@@ -1,6 +1,6 @@
 import { BaseClient, type Channel, type RawMessage, type Credentials } from "./base.ts";
 import { type Message } from "./message.ts";
-import { AccountStatus, DefaultLimiter, RateLimiter } from "./ratelimit.ts";
+import { AccountStatus, ChannelRole, DefaultLimiter, RateLimiter } from "./ratelimit.ts";
 import { SameMessageBypass } from "./smb.ts";
 import { LatencyTest } from "./latency.ts";
 import { JoinQueue, PrivmsgQueue } from "./queue.ts";
@@ -16,7 +16,9 @@ import {
   Reconnect,
   UserNotice,
   Notice,
+  RoomState,
 } from "./message/index.ts";
+import { DeepReadonly } from "./util.ts";
 
 // TODO: maintain userstate and roomstate so that rate limiters can work properly
 // TODO: emit error events based on `NOTICE` commands
@@ -42,6 +44,7 @@ export class Client {
   private _listeners: { [K in keyof ChatEventData]: Set<(event: ChatEventData[K]) => void> } =
     // deno-lint-ignore no-explicit-any
     Object.fromEntries(Events.map((event) => [event, new Set()])) as any;
+  private _state: State;
 
   constructor(
     options: {
@@ -78,16 +81,76 @@ export class Client {
     this._client.on("open", this._onopen);
     this._client.on("close", this._onclose);
     this._client.on("error", this._onerror);
+    this._state = {
+      global: {
+        id: "",
+        emoteSets: [],
+        badges: {},
+        badgeInfo: {},
+        login: this._client.nick,
+      },
+      channel: {},
+    };
+
     this.on("part", (e) => {
       if (e.user === this._client.nick) {
         this._channels.delete(e.channel);
       }
+    });
+
+    this.on("globaluserstate", (e) => {
+      const state = this._state.global;
+      state.id = e.user.id;
+      state.color = e.user.color;
+      state.emoteSets = e.emoteSets;
+      state.badges = e.user.badges;
+      state.badgeInfo = e.user.badgeInfo;
+      state.displayName = e.user.displayName;
+      state.login = e.user.login;
+    });
+    this.on("userstate", (e) => {
+      const current = this._state.channel[e.channel];
+      this._state.channel[e.channel] = {
+        role: e.role,
+        badges: e.badges,
+        badgeInfo: e.badgeInfo,
+        emote: current?.emote ?? false,
+        followers: current?.followers ?? 0,
+        r9k: current?.r9k ?? false,
+        slow: current?.slow ?? 1,
+        sub: current?.sub ?? false,
+      };
+      const global = this._state.global;
+      global.emoteSets = e.emoteSets;
+      global.color = e.color;
+    });
+    this.on("roomstate", (e) => {
+      const current = this._state.channel[e.channel];
+      this._state.channel[e.channel] = {
+        role: current?.role ?? ChannelRole.Viewer,
+        badges: current?.badges ?? this._state.global.badges,
+        badgeInfo: current?.badgeInfo ?? this._state.global.badgeInfo,
+        emote: e.emote ?? current?.emote ?? false,
+        followers: e.followers ?? current?.followers ?? 0,
+        r9k: e.r9k ?? current?.r9k ?? false,
+        slow: e.slow ?? current?.slow ?? 1,
+        sub: e.sub ?? current?.sub ?? false,
+      };
     });
   }
 
   /** Current latency to the server. */
   get latency(): number {
     return this._latencyTest.value;
+  }
+
+  /**
+   * Current bot state.
+   *
+   * Includes global user state and per-channel user + room state.
+   */
+  get state(): ReadonlyState {
+    return this._state;
   }
 
   /**
@@ -283,6 +346,10 @@ export class Client {
         this._emit("notice", Notice.parse(data, this._client.nick));
         return;
       }
+      case "ROOMSTATE": {
+        this._emit("roomstate", RoomState.parse(data));
+        return;
+      }
     }
   };
 
@@ -325,6 +392,7 @@ type ChatEventData = {
   reconnect: Reconnect;
   usernotice: UserNotice;
   notice: Notice;
+  roomstate: RoomState;
   raw: Message;
 };
 const Events = [
@@ -342,6 +410,7 @@ const Events = [
   "reconnect",
   "usernotice",
   "notice",
+  "roomstate",
   "raw",
 ] as const;
 type _check = typeof Events[number] extends keyof ChatEventData
@@ -350,3 +419,75 @@ type _check = typeof Events[number] extends keyof ChatEventData
     : "Missing events in Events"
   : "Missing events in ChatEventData";
 const _check: _check = "ok";
+
+type ReadonlyState = DeepReadonly<State>;
+
+type State = {
+  /** Global user state */
+  global: {
+    id: string;
+    color?: string;
+    emoteSets: string[];
+    badges: Record<string, string>;
+    badgeInfo: Record<string, string>;
+    displayName?: string;
+    login: string;
+  };
+  /** Per-channel user+room state */
+  channel: Record<
+    Channel,
+    {
+      role: ChannelRole;
+      badges: Record<string, string>;
+      badgeInfo: Record<string, string>;
+      /**
+       * Emote-only mode (messages may contain only Twitch emotes).
+       *
+       * Values:
+       * - `null` -> unchanged from previous roomstate
+       * - `true` -> enabled
+       * - `false` -> disabled
+       */
+      emote: boolean;
+      /**
+       * Followers-only mode - only followers may chat.
+       * Additionally, a minimum followage (in minutes) may be specified.
+       *
+       * Values:
+       * - `null` -> unchanged from previous roomstate
+       * - `-1` -> disabled
+       * - `0` -> enabled (no minimum followage)
+       * - `> 0` -> enabled (`value` = minimum followage)
+       */
+      followers: number;
+      /**
+       * R9K mode - messages with more than 9 characters must be globally unique
+       *
+       * Values:
+       * - `null` -> unchanged from previous roomstate
+       * - `true` -> enabled
+       * - `false` -> disabled
+       */
+      r9k: boolean;
+      /**
+       * Slow mode - each user may only send a message every `value` seconds
+       *
+       * Values:
+       * - `null` -> unchanged from previous roomstate
+       * - `0` -> disabled
+       * - `> 0` -> enabled (value determines the duration)
+       */
+      slow: number;
+
+      /**
+       * Sub-only mode - only subscribers may chat.
+       *
+       * Values:
+       * - `null` -> unchanged from previous roomstate
+       * - `true` -> enabled
+       * - `false` -> disabled
+       */
+      sub: boolean;
+    }
+  >;
+};

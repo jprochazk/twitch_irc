@@ -81,3 +81,7 @@ export function kebabToCamelCase(str: string): string {
 export type KebabToCamelCase<K extends string> = K extends `${infer Left}-${infer Right}`
   ? `${Lowercase<Left>}${Capitalize<KebabToCamelCase<Right>>}`
   : `${Lowercase<K>}`;
+
+export type DeepReadonly<T> = {
+  readonly [K in keyof T]: DeepReadonly<T[K]>;
+};

@@ -61,6 +61,7 @@ export class Message {
     if (!v) return null;
     if (type === "csv") return v.split(",") as TagType<T>;
     if (type === "number") return Number(v) as TagType<T>;
+    if (type === "bool") return (Number(v) === 1) as TagType<T>;
     // type = "string" | undefined
     // in both cases we want to treat it as a string
     return unescape(v) as TagType<T>;
@@ -159,13 +160,16 @@ export class Message {
   }
 }
 
-type TagTypes = "string" | "number" | "csv";
+type TagTypes = "string" | "number" | "csv" | "bool";
+// deno-fmt-ignore
 type TagType<T extends TagTypes> = T extends "string"
   ? string
   : T extends "number"
   ? number
   : T extends "csv"
   ? string[]
+  : T extends "bool"
+  ? boolean
   : never;
 
 /**

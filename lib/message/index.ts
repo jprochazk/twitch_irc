@@ -12,3 +12,4 @@ export * from "./hosttarget.ts";
 export * from "./reconnect.ts";
 export * from "./usernotice.ts";
 export * from "./notice.ts";
+export * from "./roomstate.ts";

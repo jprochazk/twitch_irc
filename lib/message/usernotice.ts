@@ -66,7 +66,7 @@ function parseParams_Sub(data: Message): Sub {
   return {
     kind: "sub",
     cumulativeMonths: data.tag("msgParamCumulativeMonths", "number")!,
-    shouldShareStreak: data.tag("msgParamShouldShareStreak", "number") === 1,
+    shouldShareStreak: data.tag("msgParamShouldShareStreak", "bool") ?? false,
     streakMonths: data.tag("msgParamStreakMonths", "number") ?? 0,
     subPlan: data.tags!.msgParamSubPlan!,
     subPlanName: unescape(data.tags!.msgParamSubPlanName!),

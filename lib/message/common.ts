@@ -1,5 +1,6 @@
 import { Message } from "../message.ts";
 import { ChannelRole } from "../ratelimit.ts";
+import { splitOnce } from "../util.ts";
 
 export type ChatEvent<Type extends string> = {
   raw: Message;
@@ -78,9 +79,8 @@ export function parseRole(badges: Record<string, string>): ChannelRole {
 export function parseBadges(badges: string[]) {
   const result: Record<string, string> = {};
   for (let i = 0; i < badges.length; ++i) {
-    const splitIndex = badges[i].indexOf("/");
-    const [name, info] = [badges[i].slice(0, splitIndex), badges[i].slice(splitIndex)];
-    result[name] = info;
+    const [name, info] = splitOnce(badges[i], "/");
+    result[name] = info!;
   }
   return result;
 }
