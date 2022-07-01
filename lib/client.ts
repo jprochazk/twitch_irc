@@ -177,6 +177,9 @@ export class Client {
    * Any joined channels will be automatically re-joined upon reconnecting.
    */
   join(channel: Channel): Promise<void> {
+    if (!channel.startsWith("#")) {
+      return Promise.reject(new Error("Channel must begin with `#`."));
+    }
     return this._join(channel, true);
   }
 
