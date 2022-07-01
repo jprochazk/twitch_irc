@@ -12,7 +12,7 @@ const client = new TwitchIrc.Client({
   },
 });
 
-client.on("raw", (e) => console.log(e.raw));
+client.on("raw", (e) => console.log(">", e.raw));
 
 client.on("privmsg", (event) => {
   //console.log(event);
@@ -31,6 +31,8 @@ client.on("privmsg", (event) => {
 client.on("open", () => {
   client.join(CHANNEL);
 });
+
+client.on("error", (e) => console.error(e));
 
 // @ts-expect-error: debugging
 window.client = client;
