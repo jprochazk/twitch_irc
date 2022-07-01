@@ -37,20 +37,22 @@ export class Message {
   /**
    * Get a tag preprocessed according to `type`
    *
-   * - `csv` - parses the value as a comma separated list of strings, use for tags such as `badges` or `emotes`
-   * - `number` - parses the value as a number, use for tags such as `tmi-sent-ts`
-   * - `string` - this is the default, it unescapes[^1] the value, use for tags such as `system-msg`
+   * - `csv` - parses the value as a comma separated list of strings. Use for tags such as `badges` or `emotes`
+   * - `number` - parses the value as a number. Use for tags such as `tmi-sent-ts`
+   * - `bool` - parses the value as a number, then maps `1` to `true`, and anything else to `false`. Use for tags such as `emote-only`.
+   * - `string` - this is the default, it unescapes[^1] the value. Use for tags such as `system-msg`
    *
-   * [^1]: Unescaping is the process of converting escaped characters,
-   * such as `\s` and `\n`, into the characters they represent.
+   * [^1]: Unescaping is the process of converting escaped characters, such as `\s` and `\n`,
+   * into the characters they represent.
    */
   tag<T extends TagTypes = "string">(key: keyof KnownTags, type?: T): TagType<T> | null;
   /**
    * Get a tag preprocessed according to `type`
    *
-   * - `csv` - parses the value as a comma separated list of strings, use for tags such as `badges` or `emotes`
-   * - `number` - parses the value as a number, use for tags such as `tmi-sent-ts`
-   * - `string` - this is the default, it unescapes[^1] the value, use for tags such as `system-msg`
+   * - `csv` - parses the value as a comma separated list of strings. Use for tags such as `badges` or `emotes`
+   * - `number` - parses the value as a number. Use for tags such as `tmi-sent-ts`
+   * - `bool` - parses the value as a number, then maps `1` to `true`, and anything else to `false`. Use for tags such as `emote-only`.
+   * - `string` - this is the default, it unescapes[^1] the value. Use for tags such as `system-msg`
    *
    * [^1]: Unescaping is the process of converting escaped characters, such as `\s` and `\n`,
    * into the characters they represent.
