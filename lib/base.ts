@@ -43,7 +43,7 @@ export class BaseClient {
       reconnect?: boolean;
       /** The URL to connect to. Used for testing. */
       url?: string;
-    } = {}
+    } = {},
   ) {
     this._capabilities = options.capabilities ?? [];
     this._credentials = options.credentials ?? {
@@ -81,7 +81,10 @@ export class BaseClient {
    *
    * `open` and `close` may be sent multiple times, every time the client reconnects.
    */
-  on<Type extends keyof ClientEventData>(type: Type, callback: ClientEventCallback<Type>) {
+  on<Type extends keyof ClientEventData>(
+    type: Type,
+    callback: ClientEventCallback<Type>,
+  ) {
     this._listeners[type].add(callback);
   }
 
@@ -94,12 +97,18 @@ export class BaseClient {
    * - `message` - emitted when the connection receives a message
    * - `error` - emitted when the connection receives an error
    */
-  off<Type extends keyof ClientEventData>(type: Type, callback: ClientEventCallback<Type>) {
+  off<Type extends keyof ClientEventData>(
+    type: Type,
+    callback: ClientEventCallback<Type>,
+  ) {
     this._listeners[type].delete(callback);
   }
 
   private _emit<Type extends keyof WithoutData>(type: Type): void;
-  private _emit<Type extends keyof WithData>(type: Type, data: WithData[Type]): void;
+  private _emit<Type extends keyof WithData>(
+    type: Type,
+    data: WithData[Type],
+  ): void;
   // deno-lint-ignore no-explicit-any
   private _emit(type: string, data?: any): void {
     // deno-lint-ignore no-explicit-any
@@ -171,7 +180,9 @@ export class BaseClient {
           // failure
           this._onerror(new Error("Invalid credentials"));
           this.close();
-        } else if (message.command.kind === "UNKNOWN" && message.command.raw === "001") {
+        } else if (
+          message.command.kind === "UNKNOWN" && message.command.raw === "001"
+        ) {
           // success
           this._onconnectedmessage(event);
           this._ws.onmessage = this._onconnectedmessage;
@@ -186,7 +197,9 @@ export class BaseClient {
   private _onconnectedmessage = (event: MessageEvent<string>) => {
     for (const raw of event.data.split("\r\n").filter(Boolean)) {
       const message = Message.parse(raw);
-      if (message.command.kind === "PING" && message.params[0] === "tmi.twitch.tv") {
+      if (
+        message.command.kind === "PING" && message.params[0] === "tmi.twitch.tv"
+      ) {
         this.send("PONG :tmi.twitch.tv\r\n");
         continue;
       }
@@ -225,25 +238,35 @@ type ClientEventData = {
 };
 
 type WithData = {
-  [K in keyof ClientEventData as ClientEventData[K] extends void ? never : K]: ClientEventData[K];
+  [K in keyof ClientEventData as ClientEventData[K] extends void ? never : K]:
+    ClientEventData[K];
 };
 type WithoutData = {
-  [K in keyof ClientEventData as ClientEventData[K] extends void ? K : never]: ClientEventData[K];
+  [K in keyof ClientEventData as ClientEventData[K] extends void ? K : never]:
+    ClientEventData[K];
 };
 
-type ClientEventCallback<K extends keyof ClientEventData> = ClientEventData[K] extends void
-  ? () => void
-  : (data: ClientEventData[K]) => void;
+type ClientEventCallback<K extends keyof ClientEventData> =
+  ClientEventData[K] extends void ? () => void
+    : (data: ClientEventData[K]) => void;
 
 type ClientEventCallbackMap = {
   [K in keyof ClientEventData]: Set<ClientEventCallback<K>>;
 };
 
-export type State = "connecting" | "authenticating" | "open" | "reconnecting" | "closed";
+export type State =
+  | "connecting"
+  | "authenticating"
+  | "open"
+  | "reconnecting"
+  | "closed";
 
 export type RawMessage = `${string}\r\n`;
 
-export type Capability = "twitch.tv/commands" | "twitch.tv/tags" | "twitch.tv/membership";
+export type Capability =
+  | "twitch.tv/commands"
+  | "twitch.tv/tags"
+  | "twitch.tv/membership";
 
 export type Token = `oauth:${string}`;
 export type Credentials = {

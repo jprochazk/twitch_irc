@@ -59,7 +59,13 @@ export type UserNotice = ChatEvent<"usernotice"> & {
   params?: UserNoticeParams;
 };
 
-export type UserNoticeParams = Sub | SubGift | GiftPaidUpgrade | Raid | Ritual | BitsBadgeTier;
+export type UserNoticeParams =
+  | Sub
+  | SubGift
+  | GiftPaidUpgrade
+  | Raid
+  | Ritual
+  | BitsBadgeTier;
 
 // "sub", "resub"
 function parseParams_Sub(data: Message): Sub {

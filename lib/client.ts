@@ -1,22 +1,32 @@
-import { BaseClient, type Channel, type RawMessage, type Credentials } from "./base.ts";
+import {
+  BaseClient,
+  type Channel,
+  type Credentials,
+  type RawMessage,
+} from "./base.ts";
 import { type Message } from "./message.ts";
-import { AccountStatus, ChannelRole, DefaultLimiter, RateLimiter } from "./ratelimit.ts";
+import {
+  AccountStatus,
+  ChannelRole,
+  DefaultLimiter,
+  RateLimiter,
+} from "./ratelimit.ts";
 import { SameMessageBypass } from "./smb.ts";
 import { LatencyTest } from "./latency.ts";
 import { JoinQueue, PrivmsgQueue } from "./queue.ts";
 import {
-  Privmsg,
-  UserState,
-  Join,
-  Part,
-  ClearMsg,
   ClearChat,
+  ClearMsg,
   GlobalUserState,
   HostTarget,
-  Reconnect,
-  UserNotice,
+  Join,
   Notice,
+  Part,
+  Privmsg,
+  Reconnect,
   RoomState,
+  UserNotice,
+  UserState,
 } from "./message/index.ts";
 import { DeepReadonly } from "./util.ts";
 
@@ -41,7 +51,9 @@ export class Client {
   private _privmsgQueue: PrivmsgQueue;
   private _joinQueue: JoinQueue;
   private _channels = new Set<Channel>();
-  private _listeners: { [K in keyof ChatEventData]: Set<(event: ChatEventData[K]) => void> } =
+  private _listeners: {
+    [K in keyof ChatEventData]: Set<(event: ChatEventData[K]) => void>;
+  } =
     // deno-lint-ignore no-explicit-any
     Object.fromEntries(Events.map((event) => [event, new Set()])) as any;
   private _state: State;
@@ -62,21 +74,28 @@ export class Client {
        * if for some reason you need a custom one, you can pass it through here.
        */
       rateLimiter?: RateLimiter;
-    } = {}
+    } = {},
   ) {
     this._client = new BaseClient({
-      capabilities: ["twitch.tv/commands", "twitch.tv/membership", "twitch.tv/tags"],
+      capabilities: [
+        "twitch.tv/commands",
+        "twitch.tv/membership",
+        "twitch.tv/tags",
+      ],
       ...options,
     });
     this._latencyTest = new LatencyTest(this._client);
-    this._rateLimiter =
-      options.rateLimiter ?? new DefaultLimiter({ status: options.accountStatus });
+    this._rateLimiter = options.rateLimiter ??
+      new DefaultLimiter({ status: options.accountStatus });
     this._privmsgQueue = new PrivmsgQueue(
       (msg) => this._client.send(msg),
       this._rateLimiter,
-      () => this._client.socketReadyState
+      () => this._client.socketReadyState,
     );
-    this._joinQueue = new JoinQueue((msg) => this._client.send(msg), this._rateLimiter);
+    this._joinQueue = new JoinQueue(
+      (msg) => this._client.send(msg),
+      this._rateLimiter,
+    );
     this._client.on("message", this._onmessage);
     this._client.on("open", this._onopen);
     this._client.on("close", this._onclose);
@@ -241,13 +260,16 @@ export class Client {
   privmsg(
     channel: Channel,
     message: string,
-    tags: { replyParentMsgId?: string; clientNonce?: string } = {}
+    tags: { replyParentMsgId?: string; clientNonce?: string } = {},
   ) {
     const tagPairs = [];
-    if (tags.replyParentMsgId) tagPairs.push(`reply-parent-msg-id=${tags.replyParentMsgId}`);
+    if (tags.replyParentMsgId) {
+      tagPairs.push(`reply-parent-msg-id=${tags.replyParentMsgId}`);
+    }
     if (tags.clientNonce) tagPairs.push(`client-nonce=${tags.clientNonce}`);
 
-    const body = `PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n` as const;
+    const body =
+      `PRIVMSG ${channel} :${message}${this._sameMessageBypass.get()}\r\n` as const;
     let data: RawMessage;
     if (tagPairs.length === 0) {
       data = body;
@@ -267,7 +289,7 @@ export class Client {
   on<Type extends keyof ChatEventData>(
     type: Type,
     callback: (event: ChatEventData[Type]) => void,
-    options: { once?: boolean } = {}
+    options: { once?: boolean } = {},
   ): () => void {
     if (options.once) {
       const wrapper = (event: ChatEventData[Type]) => {
@@ -286,13 +308,16 @@ export class Client {
    */
   off<Type extends keyof ChatEventData>(
     type: Type,
-    callback: (event: ChatEventData[Type]) => void
+    callback: (event: ChatEventData[Type]) => void,
   ) {
     this._listeners[type].delete(callback);
   }
 
   private _emit<Type extends keyof WithoutData>(type: Type): void;
-  private _emit<Type extends keyof WithData>(type: Type, data: WithData[Type]): void;
+  private _emit<Type extends keyof WithData>(
+    type: Type,
+    data: WithData[Type],
+  ): void;
   // deno-lint-ignore no-explicit-any
   private _emit(type: string, data?: any): void {
     // deno-lint-ignore no-explicit-any
@@ -330,7 +355,10 @@ export class Client {
         return;
       }
       case "GLOBALUSERSTATE": {
-        this._emit("globaluserstate", GlobalUserState.parse(data, this._client.nick));
+        this._emit(
+          "globaluserstate",
+          GlobalUserState.parse(data, this._client.nick),
+        );
         return;
       }
       case "HOSTTARGET": {
@@ -374,10 +402,12 @@ export class Client {
 }
 
 type WithData = {
-  [K in keyof ChatEventData as ChatEventData[K] extends void ? never : K]: ChatEventData[K];
+  [K in keyof ChatEventData as ChatEventData[K] extends void ? never : K]:
+    ChatEventData[K];
 };
 type WithoutData = {
-  [K in keyof ChatEventData as ChatEventData[K] extends void ? K : never]: ChatEventData[K];
+  [K in keyof ChatEventData as ChatEventData[K] extends void ? K : never]:
+    ChatEventData[K];
 };
 
 type ChatEventData = {
@@ -417,9 +447,8 @@ const Events = [
   "raw",
 ] as const;
 type _check = typeof Events[number] extends keyof ChatEventData
-  ? keyof ChatEventData extends typeof Events[number]
-    ? "ok"
-    : "Missing events in Events"
+  ? keyof ChatEventData extends typeof Events[number] ? "ok"
+  : "Missing events in Events"
   : "Missing events in ChatEventData";
 const _check: _check = "ok";
 

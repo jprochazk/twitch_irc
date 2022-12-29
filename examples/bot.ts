@@ -23,7 +23,7 @@ client.on("privmsg", (event) => {
         `I'm currently running on Deno ${Deno.version.deno}. ` +
         `My latency to TMI is ${client.latency} ms. ` +
         `Your chat color is ${event.user.color ?? "unknown"}.`,
-      { replyParentMsgId: event.id }
+      { replyParentMsgId: event.id },
     );
   }
 });

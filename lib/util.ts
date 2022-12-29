@@ -3,7 +3,8 @@ export const nonce = (length = 32) =>
     .map((v) => v.toString(16).padStart(2, "0"))
     .join("");
 
-export const sleep = (delay: number) => new Promise<void>((done) => setTimeout(done, delay));
+export const sleep = (delay: number) =>
+  new Promise<void>((done) => setTimeout(done, delay));
 
 export function noop() {}
 
@@ -56,7 +57,10 @@ export class Queue<T> {
  * assert(b === ":test");
  * ```
  */
-export function splitOnce(str: string, delimiter: string): [string, string | null] {
+export function splitOnce(
+  str: string,
+  delimiter: string,
+): [string, string | null] {
   const index = str.indexOf(delimiter);
   if (index === -1) return [str, null];
   else return [str.slice(0, index), str.slice(index + 1)];
@@ -72,13 +76,15 @@ export function kebabToCamelCase(str: string): string {
   if (parts.length > 1) {
     parts[0] = parts[0].toLowerCase();
     for (let i = 1; i < parts.length; ++i) {
-      parts[i] = parts[i].slice(0, 1).toUpperCase() + parts[i].slice(1).toLowerCase();
+      parts[i] = parts[i].slice(0, 1).toUpperCase() +
+        parts[i].slice(1).toLowerCase();
     }
   }
   return parts.join("");
 }
 
-export type KebabToCamelCase<K extends string> = K extends `${infer Left}-${infer Right}`
+export type KebabToCamelCase<K extends string> = K extends
+  `${infer Left}-${infer Right}`
   ? `${Lowercase<Left>}${Capitalize<KebabToCamelCase<Right>>}`
   : `${Lowercase<K>}`;
 

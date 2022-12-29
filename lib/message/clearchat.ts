@@ -13,7 +13,9 @@ export namespace ClearChat {
       sentAt: data.tag("tmiSentTs", "number")!,
       roomId: data.tags!.roomId!,
     };
-    if ("banDuration" in data.tags!) result.banDuration = data.tag("banDuration", "number")!;
+    if ("banDuration" in data.tags!) {
+      result.banDuration = data.tag("banDuration", "number")!;
+    }
     return result;
   }
 }

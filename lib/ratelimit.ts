@@ -51,7 +51,7 @@ export class DefaultLimiter implements RateLimiter {
   privmsg(
     now: number,
     channel: Channel,
-    options: { role?: ChannelRole; slowModeSeconds?: number } = {}
+    options: { role?: ChannelRole; slowModeSeconds?: number } = {},
   ): number {
     return this._privmsg.get(now, channel, options);
   }
@@ -88,11 +88,12 @@ export class PrivmsgLimiter {
   get(
     now: number,
     channel: Channel,
-    options: { slowModeSeconds?: number; role?: ChannelRole } = {}
+    options: { slowModeSeconds?: number; role?: ChannelRole } = {},
   ): number {
     const role = options.role ?? ChannelRole.Viewer;
-    const slowModeSeconds =
-      role >= ChannelRole.VIP ? 0 : (options?.slowModeSeconds ?? GLOBAL_SLOWMODE_SECONDS) * SECOND;
+    const slowModeSeconds = role >= ChannelRole.VIP
+      ? 0
+      : (options?.slowModeSeconds ?? GLOBAL_SLOWMODE_SECONDS) * SECOND;
 
     this._channels[channel] ??= {
       msg: new Bucket({ capacity: 20, period: 30 * SECOND }),
@@ -104,7 +105,11 @@ export class PrivmsgLimiter {
 
     // if any bucket is empty, treat all of them as empty,
     // and return the maximum time remaining until a token is available
-    const remaining = Math.max(ch.msg.peek(now), ch.slow.peek(now), this._global?.peek(now) ?? 0);
+    const remaining = Math.max(
+      ch.msg.peek(now),
+      ch.slow.peek(now),
+      this._global?.peek(now) ?? 0,
+    );
     if (remaining > 0) return remaining;
 
     // if no bucket is empty, grab a token from all of them at the same time

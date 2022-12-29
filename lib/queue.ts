@@ -65,7 +65,7 @@ export class PrivmsgQueue {
   constructor(
     sender: Sender<RawMessage>,
     rateLimiter: RateLimiter,
-    getSocketState: GetSocketState
+    getSocketState: GetSocketState,
   ) {
     this._rateLimiter = rateLimiter;
     this._sender = sender;

@@ -18,7 +18,7 @@ const cases = [
         someTag: "とりくしい",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -37,7 +37,7 @@ const cases = [
         tmiSentTs: "-6795364578871",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -50,7 +50,7 @@ const cases = [
       /*params:*/ [],
       /*tags:*/ undefined,
       /*prefix:*/ undefined,
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -63,7 +63,7 @@ const cases = [
       /*params:*/ [],
       /*tags:*/ undefined,
       /*prefix:*/ undefined,
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -76,7 +76,7 @@ const cases = [
       /*params:*/ ["tmi.twitch.tv"],
       /*tags:*/ undefined,
       /*prefix:*/ undefined,
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -89,7 +89,7 @@ const cases = [
       /*params:*/ ["tmi.twitch.tv"],
       /*tags:*/ undefined,
       /*prefix:*/ undefined,
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -102,7 +102,7 @@ const cases = [
       /*params:*/ ["justinfan12345", "Welcome, GLHF!"],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -112,10 +112,14 @@ const cases = [
     new Message(
       /*raw:*/ ":tmi.twitch.tv CAP * LS :twitch.tv/commands twitch.tv/tags twitch.tv/membership",
       /*command:*/ { kind: "CAP" },
-      /*params:*/ ["*", "LS", "twitch.tv/commands twitch.tv/tags twitch.tv/membership"],
+      /*params:*/ [
+        "*",
+        "LS",
+        "twitch.tv/commands twitch.tv/tags twitch.tv/membership",
+      ],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -128,7 +132,7 @@ const cases = [
       /*params:*/ ["*", "NAK", "twitch.tv/invalid"],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -138,10 +142,14 @@ const cases = [
     new Message(
       /*raw:*/ ":tmi.twitch.tv CAP * NAK :twitch.tv/invalid0 twitch.tv/invalid1 twitch.tv/invalid2",
       /*command:*/ { kind: "CAP" },
-      /*params:*/ ["*", "NAK", "twitch.tv/invalid0 twitch.tv/invalid1 twitch.tv/invalid2"],
+      /*params:*/ [
+        "*",
+        "NAK",
+        "twitch.tv/invalid0 twitch.tv/invalid1 twitch.tv/invalid2",
+      ],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -154,7 +162,7 @@ const cases = [
       /*params:*/ ["*", "ACK", "twitch.tv/commands"],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -164,10 +172,14 @@ const cases = [
     new Message(
       /*raw:*/ ":tmi.twitch.tv CAP * ACK :twitch.tv/commands twitch.tv/tags twitch.tv/membership",
       /*command:*/ { kind: "CAP" },
-      /*params:*/ ["*", "ACK", "twitch.tv/commands twitch.tv/tags twitch.tv/membership"],
+      /*params:*/ [
+        "*",
+        "ACK",
+        "twitch.tv/commands twitch.tv/tags twitch.tv/membership",
+      ],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -186,7 +198,7 @@ const cases = [
         subscriber: "0",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -199,7 +211,7 @@ const cases = [
       /*params:*/ [],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -233,7 +245,7 @@ const cases = [
         userType: "staff",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#forstycup"
+      /*channel:*/ "#forstycup",
     ),
   ],
   [
@@ -257,13 +269,14 @@ const cases = [
         msgParamCumulativeMonths: "16",
         roomId: "434858776",
         subscriber: "1",
-        systemMsg: "olivetan\\sextended\\stheir\\sTier\\s1\\ssubscription\\sthrough\\sApril!",
+        systemMsg:
+          "olivetan\\sextended\\stheir\\sTier\\s1\\ssubscription\\sthrough\\sApril!",
         tmiSentTs: "1565212333824",
         userId: "433099049",
         userType: "staff",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#pennypicklesthedog"
+      /*channel:*/ "#pennypicklesthedog",
     ),
   ],
   [
@@ -296,7 +309,7 @@ const cases = [
         userType: "staff",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#dallas"
+      /*channel:*/ "#dallas",
     ),
   ],
   [
@@ -317,7 +330,7 @@ const cases = [
         subsOnly: "0",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -330,7 +343,7 @@ const cases = [
       /*params:*/ ["*", "Improperly formatted auth"],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -343,7 +356,7 @@ const cases = [
       /*params:*/ ["You are permanently banned from talking in forsen."],
       /*tags:*/ { msgId: "msg_banned" },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#forsen"
+      /*channel:*/ "#forsen",
     ),
   ],
   [
@@ -356,7 +369,7 @@ const cases = [
       /*params:*/ ["leebaxd 0"],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -369,7 +382,7 @@ const cases = [
       /*params:*/ ["-"],
       /*tags:*/ undefined,
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -380,9 +393,13 @@ const cases = [
       /*raw:*/ "@badge-info=;badges=;color=;display-name=receivertest3;emote-sets=0;user-id=422021310;user-type= :tmi.twitch.tv GLOBALUSERSTATE",
       /*command:*/ { kind: "GLOBALUSERSTATE" },
       /*params:*/ [],
-      /*tags:*/ { displayName: "receivertest3", emoteSets: "0", userId: "422021310" },
+      /*tags:*/ {
+        displayName: "receivertest3",
+        emoteSets: "0",
+        userId: "422021310",
+      },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -401,7 +418,7 @@ const cases = [
         userId: "40286300",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -420,7 +437,7 @@ const cases = [
         tmiSentTs: "-6795364578871",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -433,7 +450,7 @@ const cases = [
       /*params:*/ [],
       /*tags:*/ { roomId: "40286300", tmiSentTs: "1563051778390" },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -444,9 +461,13 @@ const cases = [
       /*raw:*/ "@room-id=40286300;target-user-id=70948394;tmi-sent-ts=1563051758128 :tmi.twitch.tv CLEARCHAT #randers :weeb123",
       /*command:*/ { kind: "CLEARCHAT" },
       /*params:*/ ["weeb123"],
-      /*tags:*/ { roomId: "40286300", targetUserId: "70948394", tmiSentTs: "1563051758128" },
+      /*tags:*/ {
+        roomId: "40286300",
+        targetUserId: "70948394",
+        tmiSentTs: "1563051758128",
+      },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -464,7 +485,7 @@ const cases = [
         tmiSentTs: "1563051113633",
       },
       /*prefix:*/ { host: "tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -484,8 +505,12 @@ const cases = [
         turbo: "0",
         userId: "82008718",
       },
-      /*prefix:*/ { nick: "pajbot", user: "pajbot", host: "pajbot.tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*prefix:*/ {
+        nick: "pajbot",
+        user: "pajbot",
+        host: "pajbot.tmi.twitch.tv",
+      },
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -505,8 +530,12 @@ const cases = [
         turbo: "0",
         userId: "82008718",
       },
-      /*prefix:*/ { nick: "pajbot", user: "pajbot", host: "pajbot.tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*prefix:*/ {
+        nick: "pajbot",
+        user: "pajbot",
+        host: "pajbot.tmi.twitch.tv",
+      },
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -526,8 +555,12 @@ const cases = [
         turbo: "0",
         userId: "82008718",
       },
-      /*prefix:*/ { nick: "pajbot", user: "pajbot", host: "pajbot.tmi.twitch.tv" },
-      /*channel:*/ undefined
+      /*prefix:*/ {
+        nick: "pajbot",
+        user: "pajbot",
+        host: "pajbot.tmi.twitch.tv",
+      },
+      /*channel:*/ undefined,
     ),
   ],
   [
@@ -549,8 +582,12 @@ const cases = [
         turbo: "0",
         userId: "29803735",
       },
-      /*prefix:*/ { nick: "jun1orrrr", user: "jun1orrrr", host: "jun1orrrr.tmi.twitch.tv" },
-      /*channel:*/ "#pajlada"
+      /*prefix:*/ {
+        nick: "jun1orrrr",
+        user: "jun1orrrr",
+        host: "jun1orrrr.tmi.twitch.tv",
+      },
+      /*channel:*/ "#pajlada",
     ),
   ],
   [
@@ -574,8 +611,12 @@ const cases = [
         turbo: "0",
         userId: "40286300",
       },
-      /*prefix:*/ { nick: "randers", user: "randers", host: "randers.tmi.twitch.tv" },
-      /*channel:*/ "#randers"
+      /*prefix:*/ {
+        nick: "randers",
+        user: "randers",
+        host: "randers.tmi.twitch.tv",
+      },
+      /*channel:*/ "#randers",
     ),
   ],
   [
@@ -588,7 +629,7 @@ const cases = [
       /*params:*/ [],
       /*tags:*/ undefined,
       /*prefix:*/ { nick: "test", user: "test", host: "test.tmi.twitch.tv" },
-      /*channel:*/ "#channel"
+      /*channel:*/ "#channel",
     ),
   ],
   [
@@ -601,7 +642,7 @@ const cases = [
       /*params:*/ [],
       /*tags:*/ undefined,
       /*prefix:*/ { nick: "test", user: "test", host: "test.tmi.twitch.tv" },
-      /*channel:*/ "#channel"
+      /*channel:*/ "#channel",
     ),
   ],
   [
@@ -618,7 +659,7 @@ const cases = [
         f: "g",
       },
       /*prefix:*/ { nick: "test", user: "test", host: "test.tmi.twitch.tv" },
-      /*channel:*/ "#test"
+      /*channel:*/ "#test",
     ),
   ],
 ];
@@ -637,4 +678,3 @@ Deno.test(`parseEmote`, () => {
     ranges: [range(0, 1), range(2, 3), range(4, 5)],
   });
 });
-

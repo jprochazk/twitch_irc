@@ -1,5 +1,5 @@
 import { type Channel } from "./base.ts";
-import { kebabToCamelCase, KebabToCamelCase, splitOnce } from "./util.ts";
+import { KebabToCamelCase, kebabToCamelCase, splitOnce } from "./util.ts";
 export class Message {
   private constructor(
     /**
@@ -31,7 +31,7 @@ export class Message {
      */
     public prefix?: Prefix,
     /** Name of the channel where this message originated */
-    public channel?: Channel
+    public channel?: Channel,
   ) {}
 
   /**
@@ -45,7 +45,10 @@ export class Message {
    * [^1]: Unescaping is the process of converting escaped characters, such as `\s` and `\n`,
    * into the characters they represent.
    */
-  tag<T extends TagTypes = "string">(key: keyof KnownTags, type?: T): TagType<T> | null;
+  tag<T extends TagTypes = "string">(
+    key: keyof KnownTags,
+    type?: T,
+  ): TagType<T> | null;
   /**
    * Get a tag preprocessed according to `type`
    *
@@ -58,7 +61,10 @@ export class Message {
    * into the characters they represent.
    */
   tag<T extends TagTypes = "string">(key: string, type?: T): TagType<T> | null;
-  tag<T extends TagTypes = "string">(key: keyof KnownTags | string, type?: T): TagType<T> | null {
+  tag<T extends TagTypes = "string">(
+    key: keyof KnownTags | string,
+    type?: T,
+  ): TagType<T> | null {
     const v = this.tags?.[key];
     if (!v) return null;
     if (type === "csv") return v.split(",") as TagType<T>;
@@ -83,7 +89,8 @@ export class Message {
 
     let remainder = message.trimEnd();
 
-    tags: if (remainder.startsWith("@")) {
+    tags:
+    if (remainder.startsWith("@")) {
       remainder = remainder.slice(1);
       const [tagsRaw, maybeRemainder] = splitOnce(remainder, " :");
       if (!maybeRemainder) break tags;
@@ -100,7 +107,8 @@ export class Message {
       }
     }
 
-    prefix: if (remainder.startsWith(":")) {
+    prefix:
+    if (remainder.startsWith(":")) {
       remainder = remainder.slice(1);
       const [prefixRaw, maybeRemainder] = splitOnce(remainder, " ");
       if (!maybeRemainder) break prefix;
@@ -183,15 +191,31 @@ type TagType<T extends TagTypes> = T extends "string"
 export function unescape(str: string): string {
   let out = "";
   let escape = false;
-  loop: for (const c of str) {
+  loop:
+  for (const c of str) {
     if (escape) {
       // prettier-ignore
       switch (c) {
-      case ":": out = out.concat(";"); escape = false; continue loop;
-      case "s": out = out.concat(" "); escape = false; continue loop;
-      case "\\": out = out.concat("\\"); escape = false; continue loop;
-      case "r": out = out.concat("\r"); escape = false; continue loop;
-      case "n": out = out.concat("\n"); escape = false; continue loop;
+        case ":":
+          out = out.concat(";");
+          escape = false;
+          continue loop;
+        case "s":
+          out = out.concat(" ");
+          escape = false;
+          continue loop;
+        case "\\":
+          out = out.concat("\\");
+          escape = false;
+          continue loop;
+        case "r":
+          out = out.concat("\r");
+          escape = false;
+          continue loop;
+        case "n":
+          out = out.concat("\n");
+          escape = false;
+          continue loop;
       }
     }
 
@@ -275,7 +299,10 @@ type Tags = KnownTags & {
   readonly [tag: string]: string;
 };
 
-export type IrcCommand = { kind: IrcCommandKind } | { kind: "UNKNOWN"; raw: string };
+export type IrcCommand = { kind: IrcCommandKind } | {
+  kind: "UNKNOWN";
+  raw: string;
+};
 
 const ircCommands = [
   "PING",

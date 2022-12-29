@@ -102,4 +102,3 @@ export type Emote = {
   id: string;
   ranges: { start: number; end: number }[];
 };
-

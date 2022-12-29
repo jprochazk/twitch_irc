@@ -1,5 +1,11 @@
 import * as testing from "https://deno.land/std@0.170.0/testing/asserts.ts";
-import { Bucket, JoinLimiter, PrivmsgLimiter, AccountStatus, ChannelRole } from "./ratelimit.ts";
+import {
+  AccountStatus,
+  Bucket,
+  ChannelRole,
+  JoinLimiter,
+  PrivmsgLimiter,
+} from "./ratelimit.ts";
 import { type Channel } from "./base.ts";
 
 Deno.test("Bucket 1 token every 1s", () => {
@@ -80,7 +86,10 @@ Deno.test("Privmsg limiter (normal viewer)", () => {
   for (let i = 0; i < 20; ++i) {
     testing.assertEquals(limiter.get(i * 1.0 * 1000, channel, { role }), 0);
   }
-  testing.assertEquals(limiter.get(20 * 1.0 * 1000, channel, { role }), 10 * 1000);
+  testing.assertEquals(
+    limiter.get(20 * 1.0 * 1000, channel, { role }),
+    10 * 1000,
+  );
 });
 
 Deno.test("Privmsg limiter (normal moderator)", () => {
@@ -110,11 +119,17 @@ Deno.test("Privmsg limiter (verified viewer) global limit", () => {
     testing.assertEquals(limiter.get(0, channel, { role }), 0);
     tokens -= 1;
     for (let i = 1; i < 20; ++i) {
-      testing.assertEquals(limiter.get(i * 1.0 * 1000 - 500, channel, { role }), 500);
+      testing.assertEquals(
+        limiter.get(i * 1.0 * 1000 - 500, channel, { role }),
+        500,
+      );
       testing.assertEquals(limiter.get(i * 1.0 * 1000, channel, { role }), 0);
       tokens -= 1;
     }
-    testing.assertEquals(limiter.get(20 * 1.0 * 1000, channel, { role }), 10 * 1000);
+    testing.assertEquals(
+      limiter.get(20 * 1.0 * 1000, channel, { role }),
+      10 * 1000,
+    );
     // @ts-expect-error: accesing private property in test
     const globalRemaining = limiter._global._tokens;
     testing.assertEquals(globalRemaining, tokens);
@@ -143,4 +158,3 @@ Deno.test("Privmsg limiter (verified moderator) global limit", () => {
     testing.assertEquals(globalRemaining, tokens);
   }
 });
-

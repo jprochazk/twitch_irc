@@ -21,7 +21,11 @@ class Setup {
   timeouts: { fn: (...args: any[]) => void; delay: number; args: any[] }[] = [];
   timer = {
     // deno-lint-ignore no-explicit-any
-    set: (fn: (...args: any[]) => void, delay: number, ...args: any[]): number => {
+    set: (
+      fn: (...args: any[]) => void,
+      delay: number,
+      ...args: any[]
+    ): number => {
       return this.timeouts.push({ fn, delay, args }) - 1;
     },
     clear: (id: number) => {
@@ -45,7 +49,11 @@ Deno.test("PrivmsgQueue dispatch immediate", () => {
   const setup = new Setup();
 
   const channel = "#test";
-  const queue = new PrivmsgQueue(setup.sender, setup.rateLimiter, setup.getSocketState);
+  const queue = new PrivmsgQueue(
+    setup.sender,
+    setup.rateLimiter,
+    setup.getSocketState,
+  );
   // @ts-expect-error: accesing private property in test
   queue._timer.set = setup.timer.set;
   // @ts-expect-error: accesing private property in test
@@ -75,7 +83,11 @@ Deno.test("PrivmsgQueue dispatch delayed", () => {
 
   const channel = "#test";
   const message = "test\r\n";
-  const queue = new PrivmsgQueue(setup.sender, setup.rateLimiter, setup.getSocketState);
+  const queue = new PrivmsgQueue(
+    setup.sender,
+    setup.rateLimiter,
+    setup.getSocketState,
+  );
   // @ts-expect-error: accesing private property in test
   queue._timer.set = setup.timer.set;
   // @ts-expect-error: accesing private property in test
@@ -111,4 +123,3 @@ Deno.test("PrivmsgQueue dispatch delayed", () => {
   testing.assertEquals(setup.sent, [message]);
   testing.assertEquals(setup.timeouts.length, 1);
 });
-

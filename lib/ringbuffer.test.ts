@@ -125,4 +125,3 @@ Deno.test("GrowableRingBuffer put grow", () => {
   // @ts-expect-error: accessing private property in test
   testing.assertEquals(buffer._buffer.length, 2);
 });
-
