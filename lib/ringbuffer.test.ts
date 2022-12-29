@@ -1,4 +1,4 @@
-import * as testing from "https://deno.land/std@0.143.0/testing/asserts.ts";
+import * as testing from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { GrowableRingBuffer } from "./ringbuffer.ts";
 
 Deno.test("GrowableRingBuffer simple get/put", () => {
@@ -125,3 +125,4 @@ Deno.test("GrowableRingBuffer put grow", () => {
   // @ts-expect-error: accessing private property in test
   testing.assertEquals(buffer._buffer.length, 2);
 });
+

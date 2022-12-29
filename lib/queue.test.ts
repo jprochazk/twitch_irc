@@ -1,4 +1,4 @@
-import * as testing from "https://deno.land/std@0.143.0/testing/asserts.ts";
+import * as testing from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { PrivmsgQueue } from "./queue.ts";
 import { type RateLimiter } from "./ratelimit.ts";
 import { type RawMessage } from "./base.ts";
@@ -111,3 +111,4 @@ Deno.test("PrivmsgQueue dispatch delayed", () => {
   testing.assertEquals(setup.sent, [message]);
   testing.assertEquals(setup.timeouts.length, 1);
 });
+

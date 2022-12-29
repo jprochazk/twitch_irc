@@ -1,4 +1,4 @@
-import * as testing from "https://deno.land/std@0.143.0/testing/asserts.ts";
+import * as testing from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { Bucket, JoinLimiter, PrivmsgLimiter, AccountStatus, ChannelRole } from "./ratelimit.ts";
 import { type Channel } from "./base.ts";
 
@@ -143,3 +143,4 @@ Deno.test("Privmsg limiter (verified moderator) global limit", () => {
     testing.assertEquals(globalRemaining, tokens);
   }
 });
+
