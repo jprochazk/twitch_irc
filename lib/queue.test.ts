@@ -20,10 +20,11 @@ class Setup {
   // deno-lint-ignore no-explicit-any
   timeouts: { fn: (...args: any[]) => void; delay: number; args: any[] }[] = [];
   timer = {
-    // deno-lint-ignore no-explicit-any
     set: (
+      // deno-lint-ignore no-explicit-any
       fn: (...args: any[]) => void,
       delay: number,
+      // deno-lint-ignore no-explicit-any
       ...args: any[]
     ): number => {
       return this.timeouts.push({ fn, delay, args }) - 1;
