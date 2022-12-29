@@ -1,5 +1,6 @@
-import * as testing from "https://deno.land/std@0.143.0/testing/asserts.ts";
+import * as testing from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { Message } from "./message.ts";
+import { parseEmote } from "./message/common.ts";
 
 const cases = [
   [
@@ -627,3 +628,13 @@ for (const [name, input, expected] of cases) {
     testing.assertEquals(Message.parse(input), expected);
   });
 }
+
+const range = (start: number, end: number) => ({ start, end });
+
+Deno.test(`parseEmote`, () => {
+  testing.assertEquals(parseEmote("1:0-1,2-3,4-5"), {
+    id: "1",
+    ranges: [range(0, 1), range(2, 3), range(4, 5)],
+  });
+});
+

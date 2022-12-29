@@ -86,15 +86,20 @@ export function parseBadges(badges: string[]) {
 }
 
 export function parseEmote(emote: string): Emote {
-  const [id, range] = emote.split(":");
-  const [start, end] = range.split("-");
+  // 555555558:12-13,15-16,18-19,21-22/1:0-1,3-4,6-7,9-10
+  const [id, rawRanges] = emote.split(":");
+  const ranges = rawRanges
+    .split(",")
+    .map((r) => splitOnce(r, "-"))
+    .map(([start, end]) => ({ start: parseInt(start), end: parseInt(end!) }));
   return {
     id,
-    range: { start: parseInt(start), end: parseInt(end) },
+    ranges,
   };
 }
 
 export type Emote = {
   id: string;
-  range: { start: number; end: number };
+  ranges: { start: number; end: number }[];
 };
+
