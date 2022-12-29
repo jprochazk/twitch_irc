@@ -57,4 +57,3 @@ export type Privmsg = ChatEvent<"privmsg"> & {
    */
   emotes: Emote[];
 };
-
