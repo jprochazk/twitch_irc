@@ -11,7 +11,8 @@ export class JoinQueue {
     clear: clearTimeout.bind(window),
   };
   private _paused = false;
-  private _timerId: number;
+  // deno-lint-ignore no-explicit-any
+  private _timerId: any;
   private _queue = new GrowableRingBuffer<RawMessage>(16);
 
   constructor(sender: Sender<RawMessage>, rateLimiter: RateLimiter) {
@@ -83,7 +84,8 @@ export class PrivmsgQueue {
     };
 
     ctx.dispatch = this._ondispatch.bind(this, ctx);
-    ctx.timerId = this._timer.set(ctx.dispatch, 0);
+    // deno-lint-ignore no-explicit-any
+    ctx.timerId = this._timer.set(ctx.dispatch as any, 0);
 
     this._channels[channel] = ctx;
   }
@@ -116,7 +118,8 @@ export class PrivmsgQueue {
       this._sender(message);
       ctx.queue.get();
     }
-    ctx.timerId = this._timer.set(ctx.dispatch, remaining);
+    // deno-lint-ignore no-explicit-any
+    ctx.timerId = this._timer.set(ctx.dispatch as any, remaining);
   }
 }
 
@@ -126,7 +129,8 @@ type GetSocketState = () => number;
 
 type PrivmsgDispatchContext = {
   dispatch(ctx: PrivmsgDispatchContext): void;
-  timerId: number;
+  // deno-lint-ignore no-explicit-any
+  timerId: any;
   queue: GrowableRingBuffer<RawMessage>;
   channel: Channel;
 };

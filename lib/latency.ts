@@ -6,7 +6,8 @@ export class LatencyTest {
   private _value = 100 /* ms */;
   private _start = Date.now() /* ms */;
   private _arg = nonce();
-  private _pingInterval = -1;
+  // deno-lint-ignore no-explicit-any
+  private _pingInterval: any = null;
 
   constructor(private client: BaseClient) {
     this.client.on("message", this._onmessage);
@@ -22,7 +23,7 @@ export class LatencyTest {
 
   stop() {
     clearInterval(this._pingInterval);
-    this._pingInterval = -1;
+    this._pingInterval = null;
   }
 
   private _onmessage = ({ command, params }: Message) => {

@@ -169,7 +169,7 @@ export class BaseClient {
     }
   };
 
-  private _onauthmessage = (event: MessageEvent<string>) => {
+  private _onauthmessage = (event: MessageEvent) => {
     for (const raw of event.data.split("\r\n").filter(Boolean)) {
       const message = Message.parse(raw);
       if (this.state === "authenticating") {
@@ -194,7 +194,7 @@ export class BaseClient {
       }
     }
   };
-  private _onconnectedmessage = (event: MessageEvent<string>) => {
+  private _onconnectedmessage = (event: MessageEvent) => {
     for (const raw of event.data.split("\r\n").filter(Boolean)) {
       const message = Message.parse(raw);
       if (
@@ -229,6 +229,11 @@ export class BaseClient {
     this._emit("error", error);
   };
 }
+
+type MessageEvent = {
+  // deno-lint-ignore no-explicit-any
+  data: any;
+};
 
 type ClientEventData = {
   message: Message;

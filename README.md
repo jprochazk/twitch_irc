@@ -1,9 +1,58 @@
 # twitch_irc
 
-Twitch chat client for [Deno](https://deno.land/)
+Twitch chat client
+
+### Usage in [Deno](https://deno.land/)
 
 ```ts
 import * as TwitchIrc from "https://deno.land/x/twitch_irc/mod.ts";
+
+const channel = /*...*/;
+const nick = /*...*/;
+const pass = /*...*/;
+
+const client = new TwitchIrc.Client({
+  credentials: { nick, pass }
+});
+client.on("privmsg", ({ user, message }) => {
+  console.log(`${user.login}: ${message}`);
+});
+client.on("open", () => {
+  client.join(channel);
+});
+```
+
+### Usage in [Node](https://nodejs.org/)
+
+```
+$ npm install twitch_irc@npm:jprochazk/twitch_irc
+```
+
+ESM:
+```ts
+// index.mjs
+// or index.js, but with "type":"module" in package.json
+import * as TwitchIrc from "twitch_irc";
+
+const channel = /*...*/;
+const nick = /*...*/;
+const pass = /*...*/;
+
+const client = new TwitchIrc.Client({
+  credentials: { nick, pass }
+});
+client.on("privmsg", ({ user, message }) => {
+  console.log(`${user.login}: ${message}`);
+});
+client.on("open", () => {
+  client.join(channel);
+});
+```
+
+CommonJS:
+```ts
+// index.js
+const TwitchIrc = require("twitch_irc");
 
 const channel = /*...*/;
 const nick = /*...*/;
@@ -78,3 +127,10 @@ $ deno run \
   --allow-net=irc-ws.chat.twitch.tv \
   https://deno.land/x/twitch_irc/examples/bot.ts
 ```
+
+### Release process
+
+- Commit latest changes
+- Tag with new `version` according to semver
+- `deno run -A ./scripts/build_npm.ts <version>` using the same `version`
+- `cd npm && npm publish --access=public`
