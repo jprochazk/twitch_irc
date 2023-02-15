@@ -25,7 +25,7 @@ client.on("open", () => {
 ### Usage in [Node](https://nodejs.org/)
 
 ```
-$ npm install twitch_irc@npm:jprochazk/twitch_irc
+$ npm install twitch_irc@npm:@jprochazk/twitch_irc
 ```
 
 ESM:
