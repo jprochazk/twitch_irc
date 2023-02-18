@@ -45,10 +45,10 @@ export class Message {
    * [^1]: Unescaping is the process of converting escaped characters, such as `\s` and `\n`,
    * into the characters they represent.
    */
-  tag<T extends TagTypes = "string">(
+  tag<T extends keyof TagTypes = "string">(
     key: keyof KnownTags,
     type?: T,
-  ): TagType<T> | null;
+  ): TagTypes[T] | null;
   /**
    * Get a tag preprocessed according to `type`
    *
@@ -60,19 +60,22 @@ export class Message {
    * [^1]: Unescaping is the process of converting escaped characters, such as `\s` and `\n`,
    * into the characters they represent.
    */
-  tag<T extends TagTypes = "string">(key: string, type?: T): TagType<T> | null;
-  tag<T extends TagTypes = "string">(
+  tag<T extends keyof TagTypes = "string">(
+    key: string,
+    type?: T,
+  ): TagTypes[T] | null;
+  tag<T extends keyof TagTypes = "string">(
     key: keyof KnownTags | string,
     type?: T,
-  ): TagType<T> | null {
+  ): TagTypes[T] | null {
     const v = this.tags?.[key];
     if (!v) return null;
-    if (type === "csv") return v.split(",") as TagType<T>;
-    if (type === "number") return Number(v) as TagType<T>;
-    if (type === "bool") return (Number(v) === 1) as TagType<T>;
+    if (type === "csv") return v.split(",") as TagTypes[T];
+    if (type === "number") return Number(v) as TagTypes[T];
+    if (type === "bool") return (Number(v) === 1) as TagTypes[T];
     // type = "string" | undefined
     // in both cases we want to treat it as a string
-    return unescape(v) as TagType<T>;
+    return unescape(v) as TagTypes[T];
   }
 
   /**
@@ -170,17 +173,12 @@ export class Message {
   }
 }
 
-type TagTypes = "string" | "number" | "csv" | "bool";
-// deno-fmt-ignore
-type TagType<T extends TagTypes> = T extends "string"
-  ? string
-  : T extends "number"
-  ? number
-  : T extends "csv"
-  ? string[]
-  : T extends "bool"
-  ? boolean
-  : never;
+type TagTypes = {
+  "string": string;
+  "number": number;
+  "csv": string[];
+  "bool": boolean;
+};
 
 /**
  * Unescape an escaped tag value.

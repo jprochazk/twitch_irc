@@ -29,6 +29,7 @@ $ npm install twitch_irc@npm:@jprochazk/twitch_irc
 ```
 
 ESM:
+
 ```ts
 // index.mjs
 // or index.js, but with "type":"module" in package.json
@@ -50,6 +51,7 @@ client.on("open", () => {
 ```
 
 CommonJS:
+
 ```ts
 // index.js
 const TwitchIrc = require("twitch_irc");
